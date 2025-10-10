@@ -1,0 +1,26 @@
+{
+  "name": "icon-mobile",
+  "version": "1.0.0",
+  "description": "React Native Expo monorepo for Icon Computer mobile applications",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:user": "npm run dev --workspace=user-app",
+    "dev:agent": "npm run dev --workspace=agent-app",
+    "build:user": "npm run build --workspace=user-app",
+    "build:agent": "npm run build --workspace=agent-app",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "type-check": "npm run type-check --workspaces",
+    "clean": "npm run clean --workspaces"
+  },
+  "keywords": ["react-native", "expo", "monorepo", "mobile"],
+  "author": "Trae",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
