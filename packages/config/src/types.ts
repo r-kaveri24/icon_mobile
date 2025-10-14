@@ -99,13 +99,13 @@ export interface HealthCheckResponse {
 
 // Navigation types
 export type RootStackParamList = {
+  Splash: undefined;
   Home: undefined;
   Products: undefined;
   Profile: undefined;
   Login: undefined;
   Register: undefined;
-  ShopList: undefined;
-  ShopDetail: { shopId: string };
+  RegisterSuccess: undefined;
 };
 
 export type AgentStackParamList = {

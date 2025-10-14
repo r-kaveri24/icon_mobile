@@ -7,11 +7,12 @@ import {
   User,
   LoginForm,
   RegisterForm,
-} from '@icon/config/src/types';
+} from '@icon/config';
 import {
   mockHealthResponse,
   mockCMSResponse,
   mockUsers,
+  mockPasswords,
   mockDelay,
   mockErrors,
 } from './mock';
@@ -31,11 +32,98 @@ export const healthService = {
 // CMS service
 export const cmsService = {
   async getCMSData(): Promise<CMSResponse> {
+    // In mock mode, enrich with real dummy images from public APIs
     if (config.mockMode) {
       await mockDelay();
-      return mockCMSResponse;
+      try {
+        // Fetch banner images from Picsum and product data with images from DummyJSON
+        const [picsumList, dummyProducts, dummyLaptopProducts] = await Promise.all([
+          fetch('https://picsum.photos/v2/list?limit=5').then((r) => r.json()),
+          fetch('https://dummyjson.com/products?limit=30').then((r) => r.json()),
+          fetch('https://dummyjson.com/products/category/laptops?limit=10').then((r) => r.json()),
+        ]);
+
+        const nowIso = new Date().toISOString();
+
+        const banners = (picsumList || []).slice(0, 3).map((b: any, idx: number) => ({
+          id: String(b.id ?? idx + 1),
+          title: ['SALE', 'New Arrivals', 'Top Deals'][idx] ?? `Banner ${idx + 1}`,
+          description: undefined,
+          imageUrl: `https://picsum.photos/id/${b.id}/${1200}/${600}`,
+          linkUrl: undefined,
+          isActive: true,
+          startDate: undefined,
+          endDate: undefined,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }));
+
+        const productsMain = (dummyProducts?.products || []).map((p: any) => ({
+          id: String(p.id),
+          name: p.title,
+          description: p.description,
+          price: Number(p.price),
+          imageUrl: p.thumbnail || (Array.isArray(p.images) && p.images[0]) || `https://picsum.photos/seed/${p.id}/600/400`,
+          category: p.category || 'general',
+          isActive: true,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }));
+
+        const productsLaptops = (dummyLaptopProducts?.products || []).map((p: any) => ({
+          id: String(p.id),
+          name: p.title,
+          description: p.description,
+          price: Number(p.price),
+          imageUrl: p.thumbnail || (Array.isArray(p.images) && p.images[0]) || `https://picsum.photos/seed/${p.id}/600/400`,
+          category: p.category || 'laptops',
+          isActive: true,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }));
+
+        // Merge and deduplicate products, ensuring laptop category is present
+        const productsMap: Record<string, any> = {};
+        [...productsMain, ...productsLaptops].forEach((prod) => {
+          productsMap[prod.id] = prod;
+        });
+        const products = Object.values(productsMap);
+
+        const topDiscounts = ([...(dummyProducts?.products || []), ...(dummyLaptopProducts?.products || [])])
+          .slice()
+          .sort((a: any, b: any) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0))
+          .slice(0, 3);
+
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 14);
+        const endIso = endDate.toISOString();
+
+        const offers = topDiscounts.map((p: any) => ({
+          id: `offer-${p.id}`,
+          title: `${p.title} — ${p.discountPercentage}% OFF`,
+          description: `Save ${p.discountPercentage}% on ${p.title}`,
+          discountPercentage: Number(p.discountPercentage ?? 10),
+          isActive: true,
+          startDate: nowIso,
+          endDate: endIso,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }));
+
+        return {
+          title: 'ShopApp',
+          content: 'Dynamic content powered by DummyJSON and Picsum.',
+          banners,
+          offers,
+          products,
+        };
+      } catch (e) {
+        console.warn('[CMS] Failed to load dummy images, falling back to mockCMSResponse:', e);
+        return mockCMSResponse;
+      }
     }
-    
+
+    // Real API mode
     return apiClient.get<CMSResponse>(buildApiUrl('cms'));
   },
 
@@ -67,128 +155,6 @@ export const cmsService = {
     
     return apiClient.get<ApiResponse<any>>(buildApiUrl('cms') + '/home');
   },
-
-  async getShops(): Promise<ApiResponse<any[]>> {
-    if (config.mockMode) {
-      await mockDelay();
-      return {
-        success: true,
-        data: [
-          {
-            id: '1',
-            name: 'Icon Computer Downtown',
-            address: '123 Main St, Downtown',
-            phone: '+1 (555) 123-4567',
-            operatingHours: 'Mon-Sat: 9AM-8PM, Sun: 11AM-6PM',
-            image: 'https://via.placeholder.com/300x200',
-            rating: 4.8,
-            services: ['Repairs', 'Sales', 'Consultation'],
-            isActive: true,
-            email: 'downtown@iconcomputer.com',
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-          {
-            id: '2',
-            name: 'Icon Computer Mall',
-            address: '456 Shopping Center Blvd',
-            phone: '+1 (555) 234-5678',
-            operatingHours: 'Mon-Sun: 10AM-9PM',
-            image: 'https://via.placeholder.com/300x200',
-            rating: 4.6,
-            services: ['Sales', 'Support', 'Accessories'],
-            isActive: true,
-            email: 'mall@iconcomputer.com',
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-          {
-            id: '3',
-            name: 'Icon Computer Express',
-            address: '789 Quick Service Ave',
-            phone: '+1 (555) 345-6789',
-            operatingHours: 'Mon-Fri: 8AM-6PM',
-            image: 'https://via.placeholder.com/300x200',
-            rating: 4.7,
-            services: ['Quick Repairs', 'Parts', 'Diagnostics'],
-            isActive: true,
-            email: 'express@iconcomputer.com',
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-        ],
-      };
-    }
-    
-    return apiClient.get<ApiResponse<any[]>>(buildApiUrl('cms') + '/shops');
-  },
-
-  async getShopById(shopId: string): Promise<ApiResponse<any>> {
-    if (config.mockMode) {
-      await mockDelay();
-      
-      // Find shop by ID from mock data
-      const shops = [
-        {
-          id: '1',
-          name: 'Icon Computer Downtown',
-          address: '123 Main St, Downtown',
-          phone: '+1 (555) 123-4567',
-          operatingHours: 'Mon-Sat: 9AM-8PM, Sun: 11AM-6PM',
-          image: 'https://via.placeholder.com/300x200',
-          rating: 4.8,
-          services: ['Repairs', 'Sales', 'Consultation'],
-          isActive: true,
-          email: 'downtown@iconcomputer.com',
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: '2',
-          name: 'Icon Computer Mall',
-          address: '456 Shopping Center Blvd',
-          phone: '+1 (555) 234-5678',
-          operatingHours: 'Mon-Sun: 10AM-9PM',
-          image: 'https://via.placeholder.com/300x200',
-          rating: 4.6,
-          services: ['Sales', 'Support', 'Accessories'],
-          isActive: true,
-          email: 'mall@iconcomputer.com',
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: '3',
-          name: 'Icon Computer Express',
-          address: '789 Quick Service Ave',
-          phone: '+1 (555) 345-6789',
-          operatingHours: 'Mon-Fri: 8AM-6PM',
-          image: 'https://via.placeholder.com/300x200',
-          rating: 4.7,
-          services: ['Quick Repairs', 'Parts', 'Diagnostics'],
-          isActive: true,
-          email: 'express@iconcomputer.com',
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-01T00:00:00Z',
-        },
-      ];
-      
-      const shop = shops.find(s => s.id === shopId);
-      if (!shop) {
-        return {
-          success: false,
-          error: 'Shop not found',
-        };
-      }
-      
-      return {
-        success: true,
-        data: shop,
-      };
-    }
-    
-    return apiClient.get<ApiResponse<any>>(buildApiUrl('cms') + `/shops/${shopId}`);
-  },
 };
 
 // Auth service
@@ -197,9 +163,10 @@ export const authService = {
     if (config.mockMode) {
       await mockDelay();
       
-      // Mock login validation
+      // Mock login validation using stored passwords
       const user = mockUsers.find(u => u.email === credentials.email);
-      if (!user || credentials.password !== 'password123') {
+      const expectedPassword = user ? mockPasswords[user.email] : undefined;
+      if (!user || !expectedPassword || credentials.password !== expectedPassword) {
         return {
           success: false,
           error: 'Invalid email or password',
@@ -243,6 +210,10 @@ export const authService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      
+      // Persist in-memory user and password for future login
+      mockUsers.push(newUser);
+      mockPasswords[newUser.email] = form.password;
       
       return {
         success: true,

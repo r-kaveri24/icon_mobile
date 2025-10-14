@@ -125,3 +125,5 @@ dist/
 
 # EAS
 .easignore
+docs/
+**/README.md

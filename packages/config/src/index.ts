@@ -14,6 +14,10 @@ export interface ApiEndpoints {
   products: string;
 }
 
+// Runtime environment detection compatible with RN and Node
+const IS_DEV = (typeof __DEV__ !== 'undefined' && __DEV__) ||
+  (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production');
+
 // Default configuration
 const defaultConfig: AppConfig = {
   apiUrl: 'http://localhost:3000',

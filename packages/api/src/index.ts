@@ -15,4 +15,4 @@ export type {
   ApiResponse,
   LoginForm,
   RegisterForm,
-} from '@icon/config/src/types';
+} from '@icon/config';
