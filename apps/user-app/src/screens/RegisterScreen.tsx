@@ -46,9 +46,10 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       const response = await authService.register(form);
       
       if (response.success) {
-        Alert.alert('Success', 'Registration successful! Please login.', [
-          { text: 'OK', onPress: () => navigation.navigate('Login') }
-        ]);
+        // Ensure loading is cleared before navigating to animation screen
+        setLoading(false);
+        // Navigate to success screen (avoid replace to prevent web issues)
+        navigation.navigate('RegisterSuccess');
       } else {
         Alert.alert('Error', response.error || 'Registration failed');
       }

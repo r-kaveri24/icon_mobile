@@ -1,6 +1,5 @@
 import {
   User,
-  Shop,
   Agent,
   Product,
   Banner,
@@ -8,7 +7,7 @@ import {
   CMSResponse,
   HealthCheckResponse,
   ApiResponse,
-} from '@icon/config/src/types';
+} from '@icon/config';
 
 // Mock data
 export const mockUsers: User[] = [
@@ -38,19 +37,12 @@ export const mockUsers: User[] = [
   },
 ];
 
-export const mockShops: Shop[] = [
-  {
-    id: '1',
-    name: 'Icon Computer Main Store',
-    address: '123 Tech Street, Digital City, DC 12345',
-    phone: '+1-555-0123',
-    email: 'store@iconcomputer.com',
-    isActive: true,
-    operatingHours: 'Mon-Fri: 9AM-6PM, Sat: 10AM-4PM, Sun: Closed',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-];
+// In-memory password store for mock users
+export const mockPasswords: Record<string, string> = {
+  'admin@iconcomputer.com': 'password123',
+  'customer@example.com': 'password123',
+  'agent@iconcomputer.com': 'password123',
+};
 
 export const mockAgents: Agent[] = [
   {
@@ -58,7 +50,6 @@ export const mockAgents: Agent[] = [
     userId: '3',
     shopId: '1',
     user: mockUsers[2],
-    shop: mockShops[0],
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
   },

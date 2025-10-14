@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Alert, ScrollView, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, CMSResponse } from '@icon/config';
-import { Screen, Text, Button } from '@icon/ui';
+import { Screen, Text } from '@icon/ui';
 import { cmsService } from '@icon/api';
 import { useApp } from '../providers/AppProvider';
 
@@ -15,6 +16,10 @@ interface Props {
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { config, isLoading, setLoading } = useApp();
   const [cmsData, setCmsData] = useState<CMSResponse | null>(null);
+  const bannerScrollRef = useRef<ScrollView | null>(null);
+  const [activeBanner, setActiveBanner] = useState(0);
+  const { width } = Dimensions.get('window');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     loadCMSData();
@@ -23,8 +28,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const loadCMSData = async () => {
     try {
       setLoading(true);
-      const response = await cmsService.getHomeContent();
-      setCmsData(response.data);
+      const response = await cmsService.getCMSData();
+      setCmsData(response);
     } catch (error) {
       Alert.alert('Error', 'Failed to load content');
       console.error('CMS Error:', error);
@@ -33,72 +38,200 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleShopPress = () => {
-    navigation.navigate('ShopList');
-  };
-
-  const handleLoginPress = () => {
-    navigation.navigate('Login');
-  };
-
-  const handleRegisterPress = () => {
-    navigation.navigate('Register');
-  };
+  // Removed CTA handlers; Home no longer shows Browse/Login/Register buttons
 
   return (
     <Screen style={styles.container}>
-      <View style={styles.header}>
-        <Text variant="h1" style={styles.title}>
-          Welcome to Icon Computer
-        </Text>
-        <Text variant="body" style={styles.subtitle}>
-          Your trusted computer shop network
-        </Text>
-      </View>
-
-      {cmsData && (
-        <View style={styles.cmsContent}>
-          <Text variant="h3">{cmsData.title}</Text>
-          <Text variant="body" style={styles.description}>
-            {cmsData.content}
-          </Text>
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarLeft}>
+          <Text variant="h3" style={styles.topBarTitle}>ShopApp</Text>
         </View>
+        <View style={styles.topBarRight}>
+          <TouchableOpacity onPress={() => setDrawerOpen(true)} accessibilityLabel="Open side menu">
+            <Ionicons name="menu-outline" size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Hero Banner Carousel */}
+        {cmsData?.banners && cmsData.banners.length > 0 && (
+          <View style={styles.heroSection}>
+            <ScrollView
+              ref={bannerScrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={(e) => {
+                const index = Math.round(e.nativeEvent.contentOffset.x / width);
+                setActiveBanner(index);
+              }}
+              scrollEventThrottle={16}
+            >
+              {cmsData.banners.map((banner, idx) => (
+                <Image
+                  key={banner.id}
+                  source={{ uri: banner.imageUrl }}
+                  style={[styles.bannerImage, { width: width - 32 }]}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.dots}>
+              {cmsData.banners.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[styles.dot, activeBanner === idx && styles.dotActive]}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Best Sellers */}
+        {cmsData?.products && cmsData.products.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text variant="h3">Best Sellers</Text>
+              <Text variant="caption" color="#666">Top picks from our catalog</Text>
+            </View>
+            <View style={styles.cardRow}>
+              {cmsData.products.slice(0, 3).map((p) => (
+                <View key={p.id} style={styles.productCard}>
+                  <Image source={{ uri: p.imageUrl }} style={styles.productImage} />
+                  <Text variant="body" style={styles.productName}>{p.name}</Text>
+                  <Text variant="caption" style={styles.productPrice}>${p.price.toFixed(2)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Laptop Collection */}
+        {cmsData?.products && cmsData.products.some(p => p.category?.toLowerCase() === 'laptops') && (
+          <View style={styles.section}>
+            <Text variant="h3">Laptop Collection</Text>
+            <View style={styles.cardRow}>
+              {cmsData.products.filter(p => p.category?.toLowerCase() === 'laptops').slice(0, 2).map((p) => (
+                <View key={p.id} style={[styles.productCard, { flex: 1 }]}> 
+                  <Image source={{ uri: p.imageUrl }} style={styles.productImage} />
+                  <Text variant="body" style={styles.productName}>{p.name}</Text>
+                  <Text variant="caption" style={styles.productPrice}>${p.price.toFixed(2)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Featured Categories with images */}
+        {cmsData?.products && (
+          <View style={styles.section}>
+            <Text variant="h3">Featured Categories</Text>
+            <View style={styles.categoryRow}>
+              {[...new Set(cmsData.products.map(p => p.category))].slice(0, 4).map((cat, idx) => {
+                const catProduct = cmsData.products.find(p => p.category?.toLowerCase() === String(cat).toLowerCase());
+                return (
+                  <View key={idx} style={styles.categoryCard}>
+                    {catProduct?.imageUrl ? (
+                      <Image source={{ uri: catProduct.imageUrl }} style={styles.categoryImage} />
+                    ) : (
+                      <View style={[styles.categoryImage, { backgroundColor: '#eee' }]} />
+                    )}
+                    <Text variant="body" style={styles.categoryName}>{String(cat)}</Text>
+                    <Text variant="caption" color="#666">Latest models</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Special Offers styled like preview, with image */}
+        {cmsData?.offers && cmsData.offers.length > 0 && (
+          <View style={styles.section}>
+            <Text variant="h3">Special Offers</Text>
+            <View style={styles.offerCard}>
+              {cmsData.offers.slice(0, 2).map((offer) => {
+                const relatedProduct = cmsData.products.find(p => offer.title?.toLowerCase().includes(p.name.toLowerCase()));
+                return (
+                  <View key={offer.id} style={styles.offerRow}>
+                    {relatedProduct?.imageUrl ? (
+                      <Image source={{ uri: relatedProduct.imageUrl }} style={styles.offerImage} />
+                    ) : (
+                      <View style={[styles.offerImage, { backgroundColor: '#eee' }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text variant="body" style={styles.offerTitle}>{offer.title}</Text>
+                      <Text variant="caption" color="#666">{offer.description}</Text>
+                      <View style={styles.offerBadge}><Text variant="caption" style={styles.offerBadgeText}>Limited Time</Text></View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+      </ScrollView>
+
+      {/* Bottom Bar with icons */}
+      <View style={styles.bottomBar}>
+        <View style={styles.bottomItem}>
+          <Ionicons name="home-outline" size={22} color="#007AFF" />
+          <Text variant="caption" style={styles.bottomLabel}>Home</Text>
+        </View>
+        <View style={styles.bottomItem}>
+          <Ionicons name="search-outline" size={22} color="#333" />
+          <Text variant="caption" style={styles.bottomLabel}>Search</Text>
+        </View>
+        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('Profile')} accessibilityLabel="Go to Profile">
+          <Ionicons name="person-outline" size={22} color="#333" />
+          <Text variant="caption" style={styles.bottomLabel}>Profile</Text>
+        </TouchableOpacity>
+        <View style={styles.bottomItem}>
+          <Ionicons name="people-outline" size={22} color="#333" />
+          <Text variant="caption" style={styles.bottomLabel}>Agent</Text>
+        </View>
+      </View>
+
+      {/* Side Drawer */}
+      {drawerOpen && (
+        <>
+          <TouchableOpacity style={styles.drawerOverlay} activeOpacity={1} onPress={() => setDrawerOpen(false)} />
+          <View style={[styles.sideDrawer, { width: Math.min(width * 0.8, Math.max(260, width - 24)) }]}>
+            <View style={styles.drawerInner}>
+              <ScrollView contentContainerStyle={styles.drawerContent}>
+                <Text variant="h2" style={styles.drawerTitle}>Menu</Text>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setDrawerOpen(false); navigation.navigate('Home'); }}>
+                  <Ionicons name="home-outline" size={22} color="#007AFF" style={styles.drawerItemIcon} />
+                  <Text variant="body" style={styles.drawerItemText}>Home</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setDrawerOpen(false); navigation.navigate('Profile'); }}>
+                  <Ionicons name="person-outline" size={22} color="#333" style={styles.drawerItemIcon} />
+                  <Text variant="body" style={styles.drawerItemText}>Profile</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setDrawerOpen(false); navigation.navigate('Login'); }}>
+                  <Ionicons name="log-in-outline" size={22} color="#333" style={styles.drawerItemIcon} />
+                  <Text variant="body" style={styles.drawerItemText}>Login</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setDrawerOpen(false); navigation.navigate('Register'); }}>
+                  <Ionicons name="person-add-outline" size={22} color="#333" style={styles.drawerItemIcon} />
+                  <Text variant="body" style={styles.drawerItemText}>Register</Text>
+                </TouchableOpacity>
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.bookAgentButton}
+                onPress={() => { setDrawerOpen(false); navigation.navigate('Profile'); }}
+                accessibilityLabel="Book agent"
+              >
+                <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />
+                <Text variant="body" style={styles.bookAgentText}>BOOK AGENT</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
       )}
-
-      <View style={styles.actions}>
-        <Button
-          title="Browse Shops"
-          onPress={handleShopPress}
-          variant="primary"
-          size="large"
-          style={styles.button}
-        />
-        
-        <Button
-          title="Login"
-          onPress={handleLoginPress}
-          variant="outline"
-          size="medium"
-          style={styles.button}
-        />
-        
-        <Button
-          title="Register"
-          onPress={handleRegisterPress}
-          variant="secondary"
-          size="medium"
-          style={styles.button}
-        />
-      </View>
-
-      <View style={styles.footer}>
-        <Text variant="caption" color="#666">
-          {config.mockMode ? 'Running in Mock Mode' : 'Connected to Live API'}
-        </Text>
-        <Text variant="caption" color="#666">
-          Environment: {config.environment}
-        </Text>
-      </View>
     </Screen>
   );
 };
@@ -106,11 +239,48 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
+    paddingTop: 24,
+    backgroundColor: '#fff',
   },
+  scrollContent: {
+    paddingBottom: 80,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  topBarLeft: { flex: 1, alignItems: 'flex-start' },
+  topBarRight: { width: 40, alignItems: 'flex-end' },
+  topBarTitle: { textAlign: 'left' },
   header: {
     alignItems: 'center',
     marginBottom: 30,
+  },
+  heroSection: {
+    marginBottom: 16,
+  },
+  bannerImage: {
+    height: 180,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ddd',
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    backgroundColor: '#007AFF',
   },
   title: {
     textAlign: 'center',
@@ -120,29 +290,182 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
   },
-  cmsContent: {
-    backgroundColor: '#f5f5f5',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
+  section: {
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    marginBottom: 8,
   },
   description: {
     marginTop: 10,
     lineHeight: 20,
   },
-  actions: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 15,
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  button: {
-    marginVertical: 5,
+  productCard: {
+    width: '31%',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 10,
   },
+  productImage: {
+    width: '100%',
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#eee',
+  },
+  productName: {
+    marginBottom: 4,
+  },
+  productPrice: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  categoryCard: {
+    width: '48%',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  categoryImage: {
+    width: '100%',
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  categoryName: {
+    fontWeight: '600',
+  },
+  offerCard: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 12,
+  },
+  offerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  offerImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#ddd',
+  },
+  offerTitle: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  offerBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: '#ffeded',
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  offerBadgeText: {
+    color: '#ff4d4f',
+  },
+  // Actions and button styles removed
   footer: {
     alignItems: 'center',
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: '#eee',
+  },
+  bottomBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+  },
+  bottomItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomLabel: {
+    marginTop: 4,
+    color: '#333',
+  },
+  sideDrawer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRightWidth: 1,
+    borderRightColor: '#eee',
+    zIndex: 200,
+  },
+  drawerInner: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    zIndex: 150,
+  },
+  drawerTitle: {
+    marginBottom: 12,
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 12,
+    paddingVertical: 12,
+  },
+  drawerItemIcon: {
+    marginRight: 12,
+  },
+  drawerItemText: {
+    flexShrink: 1,
+    flexWrap: 'wrap',
+  },
+  drawerContent: {
+    paddingBottom: 24,
+  },
+  bookAgentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: '#0A2540',
+  },
+  bookAgentIcon: {
+    marginRight: 14,
+  },
+  bookAgentText: {
+    color: '#fff',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 
