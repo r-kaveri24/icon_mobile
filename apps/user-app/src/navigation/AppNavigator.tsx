@@ -11,6 +11,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import RegisterSuccessScreen from '../screens/RegisterSuccessScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AgentHubScreen from '../screens/AgentHubScreen';
+import AgentStatusScreen from '../screens/AgentStatusScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -21,9 +23,9 @@ export const AppNavigator: React.FC = () => {
         initialRouteName="Splash"
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: '#FAF8F2',
           },
-          headerTintColor: '#fff',
+          headerTintColor: '#2E2E2E',
           headerTitleStyle: {
             fontWeight: 'bold',
           },
@@ -46,7 +48,7 @@ export const AppNavigator: React.FC = () => {
             title: 'Login',
             headerRight: () => (
               <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginRight: 12 }}>
-                <RNText style={{ color: '#fff', fontWeight: '600' }}>Home</RNText>
+                <RNText style={{ color: '#2E2E2E', fontWeight: '600' }}>Home</RNText>
               </TouchableOpacity>
             ),
           })}
@@ -58,7 +60,7 @@ export const AppNavigator: React.FC = () => {
             title: 'Register',
             headerRight: () => (
               <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginRight: 12 }}>
-                <RNText style={{ color: '#fff', fontWeight: '600' }}>Home</RNText>
+                <RNText style={{ color: '#2E2E2E', fontWeight: '600' }}>Home</RNText>
               </TouchableOpacity>
             ),
           })}
@@ -72,6 +74,16 @@ export const AppNavigator: React.FC = () => {
           name="Profile" 
           component={ProfileScreen} 
           options={{ title: 'Profile' }}
+        />
+        <Stack.Screen 
+          name="AgentHub" 
+          component={AgentHubScreen} 
+          options={{ title: 'Agent Hub' }}
+        />
+        <Stack.Screen 
+          name="AgentStatus" 
+          component={AgentStatusScreen} 
+          options={{ title: 'Agent Status' }}
         />
         
       </Stack.Navigator>
