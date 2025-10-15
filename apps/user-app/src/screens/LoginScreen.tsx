@@ -36,9 +36,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       if (response.success && response.data) {
         setUser(response.data.user);
         setSessionPassword(form.password);
-        Alert.alert('Success', 'Login successful!', [
-          { text: 'OK', onPress: () => navigation.navigate('Home') }
-        ]);
+        const hasMobile = !!(response.data.user as any)?.mobile;
+        if (!hasMobile) {
+          Alert.alert('Add Mobile Number', 'Please add your mobile number to continue.', [
+            { text: 'OK', onPress: () => navigation.navigate('AddMobile') }
+          ]);
+        } else {
+          Alert.alert('Success', 'Login successful!', [
+            { text: 'OK', onPress: () => navigation.navigate('Home') }
+          ]);
+        }
       } else {
         Alert.alert('Error', response.error || 'Login failed');
       }

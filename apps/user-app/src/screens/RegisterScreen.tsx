@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, RegisterForm } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
@@ -67,95 +67,104 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen style={styles.container}>
-      <View style={styles.header}>
-        <Text variant="h2" style={styles.title}>
-          Create Your Account
-        </Text>
-        <Text variant="body" style={styles.subtitle}>
-          Join Icon Computer today
-        </Text>
-      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text variant="h2" style={styles.title}>
+              Create Your Account
+            </Text>
+            <Text variant="body" style={styles.subtitle}>
+              Join Icon Computer today
+            </Text>
+          </View>
 
-      <View style={styles.form}>
-        <View style={styles.inputGroup}>
-          <Text variant="body" style={styles.label}>
-            Full Name
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={form.name}
-            onChangeText={(value) => handleInputChange('name', value)}
-            placeholder="Enter your full name"
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-        </View>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>
+                Full Name
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={form.name}
+                onChangeText={(value) => handleInputChange('name', value)}
+                placeholder="Enter your full name"
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
 
-        <View style={styles.inputGroup}>
-          <Text variant="body" style={styles.label}>
-            Email
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={form.email}
-            onChangeText={(value) => handleInputChange('email', value)}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>
+                Email
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={form.email}
+                onChangeText={(value) => handleInputChange('email', value)}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
 
-        <View style={styles.inputGroup}>
-          <Text variant="body" style={styles.label}>
-            Password
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={form.password}
-            onChangeText={(value) => handleInputChange('password', value)}
-            placeholder="Enter your password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>
+                Password
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={form.password}
+                onChangeText={(value) => handleInputChange('password', value)}
+                placeholder="Enter your password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+            </View>
 
-        <View style={styles.inputGroup}>
-          <Text variant="body" style={styles.label}>
-            Confirm Password
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={form.confirmPassword}
-            onChangeText={(value) => handleInputChange('confirmPassword', value)}
-            placeholder="Confirm your password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>
+                Confirm Password
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={form.confirmPassword}
+                onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                placeholder="Confirm your password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+              />
+            </View>
 
-        <Button
-          title="Register"
-          onPress={handleRegister}
-          variant="primary"
-          size="large"
-          style={styles.registerButton}
-        />
+            <Button
+              title="Register"
+              onPress={handleRegister}
+              variant="primary"
+              size="large"
+              style={styles.registerButton}
+            />
 
-        <View style={styles.loginSection}>
-          <Text variant="body" style={styles.loginText}>
-            Already have an account?
-          </Text>
-          <Button
-            title="Login Here"
-            onPress={handleLoginPress}
-            variant="ghost"
-            size="medium"
-          />
-        </View>
-      </View>
+            <View style={styles.loginSection}>
+              <Text variant="body" style={styles.loginText}>
+                Already have an account?
+              </Text>
+              <Button
+                title="Login Here"
+                onPress={handleLoginPress}
+                variant="ghost"
+                size="medium"
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 };
@@ -164,6 +173,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   header: {
     alignItems: 'center',

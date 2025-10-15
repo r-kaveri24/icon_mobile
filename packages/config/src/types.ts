@@ -108,6 +108,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   RegisterSuccess: undefined;
+  AddMobile: undefined;
   AgentHub: undefined;
   AgentStatus: { requestId?: string } | undefined;
   AgentRequest: undefined;
