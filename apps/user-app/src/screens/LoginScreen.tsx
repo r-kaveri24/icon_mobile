@@ -13,7 +13,7 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { setLoading, setUser } = useApp();
+  const { setLoading, setUser, setSessionPassword } = useApp();
   const [form, setForm] = useState<LoginForm>({
     email: '',
     password: '',
@@ -35,6 +35,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       
       if (response.success && response.data) {
         setUser(response.data.user);
+        setSessionPassword(form.password);
         Alert.alert('Success', 'Login successful!', [
           { text: 'OK', onPress: () => navigation.navigate('Home') }
         ]);

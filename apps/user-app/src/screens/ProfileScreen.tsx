@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
+import { View, StyleSheet, Alert, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, Modal } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
 import { useApp } from '../providers/AppProvider';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -12,7 +14,42 @@ interface Props {
 }
 
 const ProfileScreen: React.FC<Props> = ({ navigation }) => {
-  const { user, setUser, config } = useApp();
+  const { user, setUser, config, sessionPassword, setSessionPassword } = useApp();
+
+  const [name, setName] = useState(user?.name || '');
+  const [surname, setSurname] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [changePwVisible, setChangePwVisible] = useState(false);
+  const [cpCurrent, setCpCurrent] = useState('');
+  const [cpNew, setCpNew] = useState('');
+  const [cpConfirm, setCpConfirm] = useState('');
+  const [showCpCurrent, setShowCpCurrent] = useState(false);
+  const [showCpNew, setShowCpNew] = useState(false);
+  const [showCpConfirm, setShowCpConfirm] = useState(false);
+
+  // Place the Edit button in the top navigation bar (right side)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={() => setEditing(e => !e)} style={{ marginRight: 12 }} accessibilityLabel="Edit Profile">
+          <Ionicons name="create-outline" size={20} color="#2E2E2E" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
+  useEffect(() => {
+    setName(user?.name || '');
+    setEmail(user?.email || '');
+    setPassword(sessionPassword || '');
+    setSurname((user as any)?.surname || '');
+    setMobile((user as any)?.mobile || '');
+  }, [user, sessionPassword]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -25,6 +62,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           style: 'destructive',
           onPress: () => {
             setUser(null);
+            setSessionPassword(null);
             navigation.navigate('Home');
           }
         }
@@ -32,35 +70,46 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Profile editing feature coming soon!');
+  const onSave = () => {
+    if (!name.trim() || !email.trim()) {
+      Alert.alert('Missing Info', 'Please fill in Name and Email.');
+      return;
+    }
+    setUser({
+      ...(user as any),
+      name: name.trim(),
+      surname: surname.trim(),
+      email: email.trim(),
+      mobile: mobile.trim(),
+      updatedAt: new Date().toISOString(),
+    });
+    Alert.alert('Saved', 'Your profile has been updated.');
   };
 
-  const handleViewOrders = () => {
-    Alert.alert('Order History', 'Order history feature coming soon!');
-  };
-
-  const handleSettings = () => {
-    Alert.alert('Settings', 'Settings feature coming soon!');
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Allow photo library access to set profile photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setAvatarUri(result.assets[0].uri);
+    }
   };
 
   if (!user) {
     return (
       <Screen style={styles.container}>
         <View style={styles.notLoggedIn}>
-          <Text variant="h2" style={styles.title}>
-            Not Logged In
-          </Text>
-          <Text variant="body" style={styles.subtitle}>
-            Please login to view your profile
-          </Text>
-          <Button
-            title="Go to Login"
-            onPress={() => navigation.navigate('Login')}
-            variant="primary"
-            size="large"
-            style={styles.loginButton}
-          />
+          <Text variant="h2" style={styles.title}>Not Logged In</Text>
+          <Text variant="body" style={styles.subtitle}>Please login to view your profile</Text>
+          <Button title="Go to Login" onPress={() => navigation.navigate('Login')} variant="primary" size="large" style={styles.loginButton} />
         </View>
       </Screen>
     );
@@ -68,85 +117,237 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text variant="h1" style={styles.avatarText}>
-            {user.name?.charAt(0).toUpperCase() || 'U'}
-          </Text>
+      {/* Change Password Modal */}
+      <Modal
+        visible={changePwVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setChangePwVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text variant="h2" style={styles.modalTitle}>Change Password</Text>
+
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>Current Password</Text>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  value={cpCurrent}
+                  onChangeText={setCpCurrent}
+                  placeholder="Enter current password"
+                  secureTextEntry={!showCpCurrent}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowCpCurrent(v => !v)}
+                  style={styles.inputIcon}
+                  accessibilityLabel="Toggle current password visibility"
+                >
+                  <Ionicons name={showCpCurrent ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>New Password</Text>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  value={cpNew}
+                  onChangeText={setCpNew}
+                  placeholder="Enter new password"
+                  secureTextEntry={!showCpNew}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowCpNew(v => !v)}
+                  style={styles.inputIcon}
+                  accessibilityLabel="Toggle new password visibility"
+                >
+                  <Ionicons name={showCpNew ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text variant="body" style={styles.label}>Confirm Password</Text>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  value={cpConfirm}
+                  onChangeText={setCpConfirm}
+                  placeholder="Confirm new password"
+                  secureTextEntry={!showCpConfirm}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowCpConfirm(v => !v)}
+                  style={styles.inputIcon}
+                  accessibilityLabel="Toggle confirm password visibility"
+                >
+                  <Ionicons name={showCpConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Button title="Cancel" variant="secondary" size="medium" onPress={() => setChangePwVisible(false)} />
+              <Button
+                title="Change"
+                variant="primary"
+                size="medium"
+                onPress={() => {
+                  if (!cpCurrent.trim()) {
+                    Alert.alert('Validation', 'Please enter your current password');
+                    return;
+                  }
+                  if (sessionPassword && cpCurrent !== sessionPassword) {
+                    Alert.alert('Validation', 'Current password is incorrect');
+                    return;
+                  }
+                  if (cpNew.length < 6) {
+                    Alert.alert('Validation', 'New password must be at least 6 characters');
+                    return;
+                  }
+                  if (cpNew !== cpConfirm) {
+                    Alert.alert('Validation', 'New password and confirmation do not match');
+                    return;
+                  }
+
+                  // Update session-only password until API integration
+                  setSessionPassword(cpNew);
+                  setPassword(cpNew);
+                  setChangePwVisible(false);
+                  setCpCurrent('');
+                  setCpNew('');
+                  setCpConfirm('');
+                  setShowCpCurrent(false);
+                  setShowCpNew(false);
+                  setShowCpConfirm(false);
+                  Alert.alert('Success', 'Password changed successfully');
+                }}
+              />
+            </View>
+          </View>
         </View>
-        <Text variant="h2" style={styles.userName}>
-          {user.name || 'User'}
-        </Text>
-        <Text variant="body" style={styles.userEmail}>
-          {user.email}
-        </Text>
-      </View>
+      </Modal>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {/* Top bar removed per request; Hello text no longer shown, and Edit lives in the nav header */}
 
-      <View style={styles.infoSection}>
-        <View style={styles.infoItem}>
-          <Text variant="body" style={styles.infoLabel}>
-            Member Since
-          </Text>
-          <Text variant="body" style={styles.infoValue}>
-            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently'}
-          </Text>
-        </View>
+          <View style={styles.middle}>
+            <View style={styles.profileCard}>
 
-        <View style={styles.infoItem}>
-          <Text variant="body" style={styles.infoLabel}>
-            Account Status
-          </Text>
-          <Text variant="body" style={[
-            styles.infoValue,
-            { color: user.isActive ? '#4CAF50' : '#F44336' }
-          ] as any}>
-            {user.isActive ? 'Active' : 'Inactive'}
-          </Text>
-        </View>
-      </View>
+            <View style={styles.avatarWrapper}>
+              <View style={styles.avatarRing}>
+                <View style={styles.avatar}>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                  ) : (
+                    <Text variant="h1" style={styles.avatarText}>{(name || user.name || 'U').charAt(0).toUpperCase()}</Text>
+                  )}
+                </View>
+                {editing && (
+                  <TouchableOpacity style={styles.avatarAddButton} onPress={handlePickAvatar} accessibilityLabel="Add profile photo">
+                    <Ionicons name="add" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
 
-      <View style={styles.actionsSection}>
-        <Button
-          title="Edit Profile"
-          onPress={handleEditProfile}
-          variant="outline"
-          size="large"
-          style={styles.actionButton}
-        />
-        
-        <Button
-          title="Order History"
-          onPress={handleViewOrders}
-          variant="outline"
-          size="large"
-          style={styles.actionButton}
-        />
-        
-        <Button
-          title="Settings"
-          onPress={handleSettings}
-          variant="outline"
-          size="large"
-          style={styles.actionButton}
-        />
-        
-        <Button
-          title="Logout"
-          onPress={handleLogout}
-          variant="secondary"
-          size="large"
-          style={styles.logoutButton}
-        />
-      </View>
+            {/* Social media links removed per request */}
+            <Text variant="h2" style={styles.displayName}>{name || user.name || 'User'}</Text>
 
-      <View style={styles.footer}>
-        <Text variant="caption" color="#666">
-          {config.mockMode ? 'Running in Mock Mode' : 'Connected to Live API'}
-        </Text>
-        <Text variant="caption" color="#666">
-          Environment: {config.environment}
-        </Text>
-      </View>
+            {editing ? (
+              <View style={styles.form}>
+                <TextInput
+                  style={[styles.input, styles.inputEditing]}
+                  placeholder="Name"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  placeholderTextColor="#bbb"
+                />
+                <TextInput
+                  style={[styles.input, styles.inputEditing]}
+                  placeholder="Surname"
+                  value={surname}
+                  onChangeText={setSurname}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  placeholderTextColor="#bbb"
+                />
+                <TextInput
+                  style={[styles.input, styles.inputEditing]}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholderTextColor="#bbb"
+                />
+                <TextInput
+                  style={[styles.input, styles.inputEditing]}
+                  placeholder="Mobile"
+                  value={mobile}
+                  onChangeText={setMobile}
+                  keyboardType="phone-pad"
+                  placeholderTextColor="#bbb"
+                />
+                <View style={[styles.inputReadonly, styles.inputRow]}>
+                  <Text variant="body" style={styles.passwordText}>
+                    {showPassword ? (password || '********') : '********'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(v => !v)}
+                    style={styles.inputIcon}
+                    accessibilityLabel="Toggle password visibility"
+                  >
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={() => setChangePwVisible(true)} style={styles.changePasswordLink} accessibilityLabel="Change Password">
+                  <Text variant="caption" style={styles.changePasswordText}>Change Password</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.formReadonly}>
+                <View style={styles.inputReadonly}><Text variant="body" color="#000">{name || 'Name'}</Text></View>
+                <View style={styles.inputReadonly}><Text variant="body" color={surname ? '#000' : '#999'}>{surname || 'Add Surname'}</Text></View>
+                <View style={styles.inputReadonly}><Text variant="body" color="#000">{email || 'Email'}</Text></View>
+                <View style={styles.inputReadonly}><Text variant="body" color={mobile ? '#000' : '#999'}>{mobile || 'Add Mobile No'}</Text></View>
+                <View style={[styles.inputReadonly, styles.inputRow]}>
+                  <Text variant="body" style={styles.passwordText}>
+                    {showPassword ? (password || '********') : '********'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(v => !v)}
+                    style={styles.inputIcon}
+                    accessibilityLabel="Toggle password visibility"
+                  >
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={() => setChangePwVisible(true)} style={styles.changePasswordLink} accessibilityLabel="Change Password">
+                  <Text variant="caption" style={styles.changePasswordText}>Change Password</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {editing && (
+              <View style={styles.saveButtonContainer}>
+                <Button title="Save" onPress={onSave} variant="primary" size="small" style={styles.saveButton} />
+              </View>
+            )}
+          </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 };
@@ -154,7 +355,15 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+  },
+  content: {
+    padding: 20,
+    flexGrow: 1,
+  },
+  middle: {
+    flex: 1,
+    justifyContent: 'center',
   },
   notLoggedIn: {
     flex: 1,
@@ -174,68 +383,200 @@ const styles = StyleSheet.create({
   loginButton: {
     width: '100%',
   },
-  header: {
-    backgroundColor: '#fff',
-    padding: 30,
+  profileCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    paddingBottom: 48,
+    position: 'relative',
+    // Extra top padding to make room for half-overlap avatar
+    paddingTop: 72,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    marginBottom: 12,
+  },
+  cardHeaderTitle: {
+    color: '#333',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#ff79a8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  avatarWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    // Center the avatar so half is outside and half inside the card
+    top: -49,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  avatarRing: {
+    padding: 6,
+    borderRadius: 50,
+    backgroundColor: '#eee',
+    position: 'relative',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    backgroundColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
   },
   avatarText: {
     color: '#fff',
     fontWeight: 'bold',
   },
-  userName: {
-    textAlign: 'center',
-    marginBottom: 5,
+  avatarImage: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
   },
-  userEmail: {
-    textAlign: 'center',
-    color: '#666',
+  avatarAddButton: {
+    position: 'absolute',
+    right: -6,
+    bottom: -6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  infoSection: {
+  hello: {
+    color: '#7c7c7c',
+    marginRight: 8,
+  },
+  displayName: {
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#333',
+  },
+  form: {
+    gap: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
     backgroundColor: '#fff',
-    margin: 15,
-    borderRadius: 12,
+  },
+  inputWithIcon: {
+    paddingRight: 42,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  inputRow: {
+    position: 'relative',
+  },
+  inputIcon: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordText: {
+    textAlign: 'left',
+    color: '#000',
+  },
+  changePasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: 6,
+  },
+  changePasswordText: {
+    color: '#007AFF',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
   },
-  infoItem: {
+  modalCard: {
+    width: '100%',
+    maxWidth: 520,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 4,
+  },
+  modalTitle: {
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#333',
+  },
+  modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    marginTop: 8,
   },
-  infoLabel: {
-    fontWeight: '600',
+  inputEditing: {
+    color: '#7c7c7c',
   },
-  infoValue: {
-    color: '#666',
+  formReadonly: {
+    gap: 12,
   },
-  actionsSection: {
-    margin: 15,
-    gap: 10,
+  inputReadonly: {
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: '#fff',
   },
-  actionButton: {
-    marginVertical: 5,
+  saveButton: {
+    width: 120,
+    borderRadius: 22,
+    elevation: 3,
   },
-  logoutButton: {
-    marginTop: 20,
-  },
-  footer: {
+  saveButtonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: -16,
     alignItems: 'center',
-    padding: 20,
-    marginTop: 'auto',
   },
 });
 
