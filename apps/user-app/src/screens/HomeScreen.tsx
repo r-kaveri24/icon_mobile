@@ -141,29 +141,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
 
-        {/* Featured Categories with images */}
-        {cmsData?.products && (
-          <View style={styles.section}>
-            <Text variant="h3">Featured Categories</Text>
-            <View style={styles.categoryRow}>
-              {[...new Set(cmsData.products.map(p => p.category))].slice(0, 4).map((cat, idx) => {
-                const catProduct = cmsData.products.find(p => p.category?.toLowerCase() === String(cat).toLowerCase());
-                return (
-                  <View key={idx} style={styles.categoryCard}>
-                    {catProduct?.imageUrl ? (
-                      <Image source={{ uri: catProduct.imageUrl }} style={styles.categoryImage} />
-                    ) : (
-                      <View style={[styles.categoryImage, { backgroundColor: '#eee' }]} />
-                    )}
-                    <Text variant="body" style={styles.categoryName}>{String(cat)}</Text>
-                    <Text variant="caption" color="#666">Latest models</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
         {/* Special Offers styled like preview, with image */}
         {cmsData?.offers && cmsData.offers.length > 0 && (
           <View style={styles.section}>
@@ -206,10 +183,10 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="person-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Profile</Text>
         </TouchableOpacity>
-        <View style={styles.bottomItem}>
+        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('AgentHub')} accessibilityLabel="Open Agent hub">
           <Ionicons name="people-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Agent</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Side Drawer */}
@@ -219,7 +196,19 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={[styles.sideDrawer, { width: Math.min(width * 0.8, Math.max(260, width - 24)) }]}>
             <View style={styles.drawerInner}>
               <ScrollView contentContainerStyle={styles.drawerContent}>
-                <Text variant="h2" style={styles.drawerTitle}>Menu</Text>
+                <View style={styles.drawerHeader}>
+                  <Text variant="h2" style={styles.drawerTitle}>Menu</Text>
+                  <TouchableOpacity
+                    style={styles.drawerHeaderBack}
+                    onPress={() => {
+                      setDrawerOpen(false);
+                    }}
+                    accessibilityLabel="Go back"
+                  >
+                    <Ionicons name="arrow-back-outline" size={22} color="#333" />
+                    <Text variant="body" style={styles.drawerHeaderBackText}>Back</Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setDrawerOpen(false); navigation.navigate('Home'); }}>
                   <Ionicons name="home-outline" size={22} color="#007AFF" style={styles.drawerItemIcon} />
                   <Text variant="body" style={styles.drawerItemText}>Home</Text>
@@ -248,7 +237,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               </ScrollView>
               <TouchableOpacity
                 style={styles.bookAgentButton}
-                onPress={() => { setDrawerOpen(false); navigation.navigate('Profile'); }}
+                onPress={() => { setDrawerOpen(false); navigation.navigate('AgentHub'); }}
                 accessibilityLabel="Book agent"
               >
                 <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />
@@ -363,6 +352,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8E2D9',
   },
   categoryImage: {
     width: '100%',
@@ -425,6 +416,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     backgroundColor: '#fff',
     paddingHorizontal: 12,
+    zIndex: 100,
+    elevation: 8,
   },
   bottomItem: {
     alignItems: 'center',
@@ -455,11 +448,31 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.20)',
     zIndex: 150,
   },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   drawerTitle: {
+    marginTop: 12,
     marginBottom: 12,
+  },
+  drawerHeaderTitle: {
+    flex: 1,
+  },
+  drawerHeaderBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  drawerHeaderBackText: {
+    marginLeft: 6,
+    color: '#2E2E2E',
+  },
+  drawerHeaderSpacer: {
+    flex: 1,
   },
   drawerItem: {
     flexDirection: 'row',
@@ -475,6 +488,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   drawerContent: {
+    paddingTop: 16,
     paddingBottom: 24,
   },
   bookAgentButton: {
@@ -483,7 +497,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: '#0A2540',
+    backgroundColor: '#1A1A1A',
   },
   bookAgentIcon: {
     marginRight: 14,
