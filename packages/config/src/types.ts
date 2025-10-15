@@ -103,11 +103,16 @@ export type RootStackParamList = {
   Home: undefined;
   Products: undefined;
   Profile: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
   Login: undefined;
   Register: undefined;
   RegisterSuccess: undefined;
   AgentHub: undefined;
   AgentStatus: { requestId?: string } | undefined;
+  AgentRequest: undefined;
+  AgentHistory: undefined;
+  Services: undefined;
 };
 
 export type AgentStackParamList = {

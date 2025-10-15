@@ -125,6 +125,16 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
 
+        {/* Book Agent CTA (matches sidebar button) */}
+        <TouchableOpacity
+          style={styles.bookAgentButton}
+          onPress={() => { user ? navigation.navigate('AgentRequest') : navigation.navigate('Login'); }}
+          accessibilityLabel="Book agent"
+        >
+          <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />
+          <Text variant="body" style={styles.bookAgentText}>BOOK AGENT</Text>
+        </TouchableOpacity>
+
         {/* Laptop Collection */}
         {cmsData?.products && cmsData.products.some(p => p.category?.toLowerCase() === 'laptops') && (
           <View style={styles.section}>
@@ -175,15 +185,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="home-outline" size={22} color="#007AFF" />
           <Text variant="caption" style={styles.bottomLabel}>Home</Text>
         </View>
-        <View style={styles.bottomItem}>
-          <Ionicons name="search-outline" size={22} color="#333" />
-          <Text variant="caption" style={styles.bottomLabel}>Search</Text>
-        </View>
         <TouchableOpacity style={styles.bottomItem} onPress={() => user ? navigation.navigate('Profile') : navigation.navigate('Login')} accessibilityLabel="Go to Profile">
           <Ionicons name="person-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('AgentHub')} accessibilityLabel="Open Agent hub">
+        <TouchableOpacity style={styles.bottomItem} onPress={() => user ? navigation.navigate('AgentHub') : navigation.navigate('Login')} accessibilityLabel="Open Agent hub">
           <Ionicons name="people-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Agent</Text>
         </TouchableOpacity>
@@ -237,7 +243,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               </ScrollView>
               <TouchableOpacity
                 style={styles.bookAgentButton}
-                onPress={() => { setDrawerOpen(false); navigation.navigate('AgentHub'); }}
+                onPress={() => { setDrawerOpen(false); user ? navigation.navigate('AgentRequest') : navigation.navigate('Login'); }}
                 accessibilityLabel="Book agent"
               >
                 <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />

@@ -32,7 +32,7 @@ const AgentHubScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Four Action Cards */}
           <View style={styles.cardGrid}>
-            <TouchableOpacity style={styles.card} accessibilityLabel="Book Appointment">
+            <TouchableOpacity style={styles.card} accessibilityLabel="Book Appointment" onPress={() => navigation.navigate('AgentRequest')}>
               <Ionicons name="calendar-outline" size={28} color="#333" />
               <Text variant="body" style={styles.cardText}>Book Agent</Text>
             </TouchableOpacity>
@@ -40,11 +40,11 @@ const AgentHubScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="search-outline" size={28} color="#333" />
               <Text variant="body" style={styles.cardText}>Agent Status</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} accessibilityLabel="Get Deals">
+            <TouchableOpacity style={styles.card} accessibilityLabel="History" onPress={() => navigation.navigate('AgentHistory')}>
               <Ionicons name="pricetag-outline" size={28} color="#333" />
               <Text variant="body" style={styles.cardText}>History</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} accessibilityLabel="View Services">
+            <TouchableOpacity style={styles.card} accessibilityLabel="View Services" onPress={() => navigation.navigate('Services')}>
               <Ionicons name="construct-outline" size={28} color="#333" />
               <Text variant="body" style={styles.cardText}>View Services</Text>
             </TouchableOpacity>
@@ -67,15 +67,11 @@ const AgentHubScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="home-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Home</Text>
         </TouchableOpacity>
-        <View style={styles.bottomItem}>
-          <Ionicons name="search-outline" size={22} color="#333" />
-          <Text variant="caption" style={styles.bottomLabel}>Search</Text>
-        </View>
         <TouchableOpacity style={styles.bottomItem} onPress={() => user ? navigation.navigate('Profile') : navigation.navigate('Login')} accessibilityLabel="Go to Profile">
           <Ionicons name="person-outline" size={22} color="#333" />
           <Text variant="caption" style={styles.bottomLabel}>Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomItem} onPress={() => navigation.navigate('AgentHub')} accessibilityLabel="Open Agent hub">
+        <TouchableOpacity style={styles.bottomItem} onPress={() => user ? navigation.navigate('AgentHub') : navigation.navigate('Login')} accessibilityLabel="Open Agent hub">
           <Ionicons name="people-outline" size={22} color="#007AFF" />
           <Text variant="caption" style={styles.bottomLabel}>Agent</Text>
         </TouchableOpacity>

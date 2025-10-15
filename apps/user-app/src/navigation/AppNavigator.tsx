@@ -11,8 +11,13 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import RegisterSuccessScreen from '../screens/RegisterSuccessScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import AgentHubScreen from '../screens/AgentHubScreen';
 import AgentStatusScreen from '../screens/AgentStatusScreen';
+import AgentRequestScreen from '../screens/AgentRequestScreen';
+import AgentHistoryScreen from '../screens/AgentHistoryScreen';
+import ServicesScreen from '../screens/ServicesScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -76,6 +81,16 @@ export const AppNavigator: React.FC = () => {
           options={{ title: 'Profile' }}
         />
         <Stack.Screen 
+          name="EditProfile" 
+          component={EditProfileScreen} 
+          options={{ title: 'Edit Profile' }}
+        />
+        <Stack.Screen 
+          name="ChangePassword" 
+          component={ChangePasswordScreen} 
+          options={{ title: 'Change Password' }}
+        />
+        <Stack.Screen 
           name="AgentHub" 
           component={AgentHubScreen} 
           options={{ title: 'Agent Hub' }}
@@ -84,6 +99,21 @@ export const AppNavigator: React.FC = () => {
           name="AgentStatus" 
           component={AgentStatusScreen} 
           options={{ title: 'Agent Status' }}
+        />
+        <Stack.Screen 
+          name="AgentRequest" 
+          component={AgentRequestScreen} 
+          options={{ title: 'Book Agent' }}
+        />
+        <Stack.Screen 
+          name="AgentHistory" 
+          component={AgentHistoryScreen} 
+          options={{ title: 'History' }}
+        />
+        <Stack.Screen 
+          name="Services" 
+          component={ServicesScreen} 
+          options={{ title: 'Services' }}
         />
         
       </Stack.Navigator>
