@@ -1,10 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Modal, Image, TouchableOpacity, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
-import { Ionicons } from '@expo/vector-icons';
 
 type AgentStatusNavProp = StackNavigationProp<RootStackParamList, 'AgentStatus'>;
 type AgentStatusRouteProp = RouteProp<RootStackParamList, 'AgentStatus'>;
@@ -32,6 +32,14 @@ const timelineEntries = [
 export default function AgentStatusScreen({ navigation, route }: Props) {
   // Placeholder progress; in future, fetch by requestId from route.params
   const progressIndex = timelineEntries.findIndex(e => e.status === 'current');
+  const [showAgentModal, setShowAgentModal] = React.useState(false);
+  const agent = React.useMemo(() => ({
+    name: 'Rahul',
+    avatarUrl: 'https://i.pravatar.cc/120?u=rahul-agent',
+    phone: '+91-9876543210',
+    completedOrders: 142,
+    since: '2023',
+  }), []);
 
   return (
     <Screen style={styles.container}>
@@ -57,6 +65,11 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
                 <Text variant="body" style={styles.cardTitle}>{item.title}</Text>
                 <Text variant="caption" color="#666">{item.desc}</Text>
                 <Text variant="caption" color="#999">{item.time}</Text>
+                {item.key === 'accepted' && item.status === 'done' && (
+                  <View style={styles.agentActionRow}>
+                    <Button title="View Agent" onPress={() => setShowAgentModal(true)} />
+                  </View>
+                )}
               </View>
             </View>
           );
@@ -66,6 +79,42 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
       <View style={styles.actions}>
         <Button title="Back to Agent Hub" onPress={() => navigation.navigate('AgentHub')} />
       </View>
+
+      <Modal visible={showAgentModal} transparent animationType="fade" onRequestClose={() => setShowAgentModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowAgentModal(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.modalCloseIcon}
+              onPress={() => setShowAgentModal(false)}
+              accessibilityLabel="Close"
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            >
+              <Ionicons name="close-outline" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text variant="h3">Agent Details</Text>
+            <View style={styles.avatarSection}>
+              <Image source={{ uri: agent.avatarUrl }} style={styles.avatarImage} />
+            </View>
+            <View style={styles.modalRow}>
+              <Text variant="body" style={styles.modalLabel}>Name</Text>
+              <Text variant="body" style={styles.modalValue}>{agent.name}</Text>
+            </View>
+            
+            <View style={styles.modalRow}>
+              <Text variant="body" style={styles.modalLabel}>Phone</Text>
+              <Text variant="body" style={styles.modalValue}>{agent.phone}</Text>
+            </View>
+            <View style={styles.modalRow}>
+              <Text variant="body" style={styles.modalLabel}>Completed</Text>
+              <Text variant="body" style={styles.modalValue}>{agent.completedOrders}</Text>
+            </View>
+            <View style={styles.modalRow}>
+              <Text variant="body" style={styles.modalLabel}>Since</Text>
+              <Text variant="body" style={styles.modalValue}>{agent.since}</Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
@@ -156,5 +205,73 @@ const styles = StyleSheet.create({
   actions: {
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  agentActionRow: {
+    marginTop: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E4E7EC',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  modalTitle: {
+    color: '#333',
+    marginBottom: 10,
+  },
+  agentName: {
+    color: '#333',
+    marginBottom: 6,
+    alignSelf: 'center',
+  },
+  avatarSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#EEE',
+    borderWidth: 1,
+    borderColor: '#E4E7EC',
+  },
+  modalCloseIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 8,
+    borderRadius: 18,
+    backgroundColor: '#F2F4F7',
+    borderWidth: 1,
+    borderColor: '#E4E7EC',
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  modalLabel: {
+    color: '#666',
+  },
+  modalValue: {
+    color: '#2E2E2E',
+    fontWeight: '600',
   },
 });

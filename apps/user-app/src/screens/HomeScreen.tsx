@@ -128,7 +128,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         {/* Book Agent CTA (matches sidebar button) */}
         <TouchableOpacity
           style={styles.bookAgentButton}
-          onPress={() => { user ? navigation.navigate('AgentRequest') : navigation.navigate('Login'); }}
+          onPress={() => { user ? navigation.navigate('AgentHub') : navigation.navigate('Login'); }}
           accessibilityLabel="Book agent"
         >
           <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />
@@ -243,7 +243,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               </ScrollView>
               <TouchableOpacity
                 style={styles.bookAgentButton}
-                onPress={() => { setDrawerOpen(false); user ? navigation.navigate('AgentRequest') : navigation.navigate('Login'); }}
+                onPress={() => { setDrawerOpen(false); user ? navigation.navigate('AgentHub') : navigation.navigate('Login'); }}
                 accessibilityLabel="Book agent"
               >
                 <Ionicons name="people-outline" size={20} color="#fff" style={styles.bookAgentIcon} />
