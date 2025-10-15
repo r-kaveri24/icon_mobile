@@ -10,6 +10,7 @@ import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import RegisterSuccessScreen from '../screens/RegisterSuccessScreen';
+import AddMobileScreen from '../screens/AddMobileScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
@@ -74,6 +75,11 @@ export const AppNavigator: React.FC = () => {
           name="RegisterSuccess" 
           component={RegisterSuccessScreen} 
           options={{ title: 'Success', headerShown: false }}
+        />
+        <Stack.Screen 
+          name="AddMobile" 
+          component={AddMobileScreen} 
+          options={{ title: 'Add Mobile' }}
         />
         <Stack.Screen 
           name="Profile" 
