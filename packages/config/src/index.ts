@@ -18,6 +18,10 @@ export interface ApiEndpoints {
 const IS_DEV = (typeof __DEV__ !== 'undefined' && __DEV__) ||
   (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production');
 
+// Clerk keys (do not use SDK client-side; export for backend/use-in-services only)
+export const clerkPublishableKey = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) || '';
+export const clerkSecretKey = (typeof process !== 'undefined' && process.env && process.env.CLERK_SECRET_KEY) || '';
+
 // Default configuration
 const defaultConfig: AppConfig = {
   apiUrl: 'http://localhost:3000',

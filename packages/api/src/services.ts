@@ -189,19 +189,23 @@ export const authService = {
   },
 
   async register(form: RegisterForm): Promise<ApiResponse<{ user: User; token: string }>> {
-    if (config.mockMode) {
+    // Try real backend route first (which proxies to Clerk), then gracefully fall back to mock.
+    try {
+      return await apiClient.post<ApiResponse<{ user: User; token: string }>>(
+        buildApiUrl('auth') + '/register',
+        form
+      );
+    } catch (e) {
+      // If in mock mode, provide a local mock fallback; otherwise rethrow error
+      if (!config.mockMode) {
+        throw e;
+      }
+
       await mockDelay();
-      
-      // Mock registration validation
       const existingUser = mockUsers.find(u => u.email === form.email);
       if (existingUser) {
-        return {
-          success: false,
-          error: 'Email already exists',
-        };
+        return { success: false, error: 'Email already exists' };
       }
-      
-      // Create new mock user
       const newUser: User = {
         id: (mockUsers.length + 1).toString(),
         email: form.email,
@@ -210,24 +214,10 @@ export const authService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
-      // Persist in-memory user and password for future login
       mockUsers.push(newUser);
       mockPasswords[newUser.email] = form.password;
-      
-      return {
-        success: true,
-        data: {
-          user: newUser,
-          token: 'mock-jwt-token-' + newUser.id,
-        },
-      };
+      return { success: true, data: { user: newUser, token: 'mock-jwt-token-' + newUser.id } };
     }
-    
-    return apiClient.post<ApiResponse<{ user: User; token: string }>>(
-      buildApiUrl('auth') + '/register',
-      form
-    );
   },
 
   async logout(): Promise<ApiResponse> {
