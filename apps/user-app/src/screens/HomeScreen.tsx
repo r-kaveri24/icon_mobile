@@ -6,6 +6,7 @@ import { RootStackParamList, CMSResponse } from '@icon/config';
 import { Screen, Text } from '@icon/ui';
 import { cmsService, authService, apiClient } from '@icon/api';
 import { useApp } from '../providers/AppProvider';
+import { useAuth } from '@clerk/clerk-expo';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -20,6 +21,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [activeBanner, setActiveBanner] = useState(0);
   const { width } = Dimensions.get('window');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     loadCMSData();
@@ -43,6 +45,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       setLoading(true);
+      // End Clerk session to fully log out
+      await signOut();
       await authService.logout();
       apiClient.clearAuthToken();
       setUser(null);

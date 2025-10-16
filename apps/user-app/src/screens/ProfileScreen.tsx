@@ -6,6 +6,7 @@ import { Screen, Text, Button } from '@icon/ui';
 import { useApp } from '../providers/AppProvider';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '@clerk/clerk-expo';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -15,6 +16,7 @@ interface Props {
 
 const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { user, setUser, config, sessionPassword, setSessionPassword } = useApp();
+  const { signOut } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [surname, setSurname] = useState('');
@@ -60,7 +62,12 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         { 
           text: 'Logout', 
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (e) {
+              console.error('Clerk signOut error:', e);
+            }
             setUser(null);
             setSessionPassword(null);
             navigation.navigate('Home');
