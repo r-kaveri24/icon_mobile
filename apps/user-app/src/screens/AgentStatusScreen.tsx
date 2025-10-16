@@ -33,6 +33,33 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
   // Placeholder progress; in future, fetch by requestId from route.params
   const progressIndex = timelineEntries.findIndex(e => e.status === 'current');
   const [showAgentModal, setShowAgentModal] = React.useState(false);
+  // Countdown: start from 3 hours after agent accepts
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  const [acceptedAt] = React.useState<number>(() => Date.now());
+  const [timeLeftMs, setTimeLeftMs] = React.useState<number>(THREE_HOURS_MS);
+  const formatTime = React.useCallback((ms: number) => {
+    if (ms <= 0) return '00:00:00';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }, []);
+
+  React.useEffect(() => {
+    // Only run countdown if accepted step has been reached/done
+    const acceptedReached = timelineEntries.some(e => e.key === 'accepted' && (e.status === 'done' || e.status === 'current'));
+    if (!acceptedReached) return;
+    const endAt = acceptedAt + THREE_HOURS_MS;
+    const tick = () => {
+      const now = Date.now();
+      setTimeLeftMs(Math.max(0, endAt - now));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [acceptedAt]);
   const agent = React.useMemo(() => ({
     name: 'Rahul',
     avatarUrl: 'https://i.pravatar.cc/120?u=rahul-agent',
@@ -65,6 +92,16 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
                 <Text variant="body" style={styles.cardTitle}>{item.title}</Text>
                 <Text variant="caption" color="#666">{item.desc}</Text>
                 <Text variant="caption" color="#999">{item.time}</Text>
+                {item.key === 'accepted' && (item.status === 'done' || item.status === 'current') && (
+                  <View style={styles.countdownRow}>
+                    <View style={styles.countdownBadge}>
+                      <Ionicons name="time-outline" size={16} color="#2C5AA0" />
+                      <Text variant="caption" style={styles.countdownText}>
+                        {formatTime(timeLeftMs)} remaining
+                      </Text>
+                    </View>
+                  </View>
+                )}
                 {item.key === 'accepted' && item.status === 'done' && (
                   <View style={styles.agentActionRow}>
                     <Button title="View Agent" onPress={() => setShowAgentModal(true)} />
@@ -208,6 +245,25 @@ const styles = StyleSheet.create({
   },
   agentActionRow: {
     marginTop: 8,
+  },
+  countdownRow: {
+    marginTop: 8,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#D8DDE6',
+    backgroundColor: '#F6F9FE',
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  countdownText: {
+    marginLeft: 6,
+    color: '#2C5AA0',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
