@@ -21,7 +21,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const { signIn, isLoaded: signInLoaded } = useSignIn();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, signOut } = useAuth();
   const { setActive } = useClerk();
   const { user } = useUser();
   const googleOAuth = useOAuth({ strategy: 'oauth_google' });
@@ -83,6 +83,30 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      // If a session already exists, avoid starting a new OAuth flow
+      if (isSignedIn) {
+        setLoading(false);
+        Alert.alert(
+          'Already Signed In',
+          'You already have an active session. To sign in with a different Google account, please log out first.',
+          [
+            { text: 'Go to Home', onPress: () => navigation.navigate('Home') },
+            {
+              text: 'Logout',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await signOut();
+                  navigation.replace('Login');
+                } catch (e) {
+                  console.error('SignOut Error:', e);
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
       const { startOAuthFlow } = googleOAuth;
       const { createdSessionId, setActive: setActiveOAuth } = await startOAuthFlow();
       if (createdSessionId) {
