@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, RegisterForm } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
-import { authService } from '@icon/api';
 import { useApp } from '../providers/AppProvider';
+import { useSignUp, useOAuth, useAuth, useUser } from '@clerk/clerk-expo';
+// Using official Google "G" logo via remote asset URL per brand guidelines
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -13,13 +14,16 @@ interface Props {
 }
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
-  const { setLoading } = useApp();
+  const { setLoading, setUser } = useApp();
   const [form, setForm] = useState<RegisterForm>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  const { signOut } = useAuth();
+  const googleOAuth = useOAuth({ strategy: 'oauth_google' });
 
   const handleInputChange = (field: keyof RegisterForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -43,18 +47,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const response = await authService.register(form);
-      
-      if (response.success) {
-        // Ensure loading is cleared before navigating to animation screen
-        setLoading(false);
-        // Navigate to success screen (avoid replace to prevent web issues)
-        navigation.navigate('RegisterSuccess');
-      } else {
-        Alert.alert('Error', response.error || 'Registration failed');
+      if (!signUpLoaded) {
+        throw new Error('SignUp not loaded');
       }
-    } catch (error) {
-      Alert.alert('Error', 'Network error occurred');
+      const nameParts = form.name.trim().split(' ').filter(Boolean);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ');
+      await signUp.create({ emailAddress: form.email, password: form.password, firstName, lastName });
+
+      // If your Clerk instance requires email verification, you would normally
+      // call signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      // and then attempt verification with the received code.
+      // For now, navigate to a success screen and let user login afterward.
+      navigation.navigate('RegisterSuccess');
+    } catch (error: any) {
+      const msg = error?.errors?.[0]?.message || error?.message || 'Registration failed';
+      Alert.alert('Error', msg);
       console.error('Register Error:', error);
     } finally {
       setLoading(false);
@@ -63,6 +71,43 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleLoginPress = () => {
     navigation.navigate('Login');
+  };
+
+  const { user: clerkUser } = useUser();
+
+  const handleGoogleRegister = async () => {
+    try {
+      setLoading(true);
+      const { startOAuthFlow } = googleOAuth;
+      const { createdSessionId, setActive: setActiveOAuth } = await startOAuthFlow();
+      if (createdSessionId) {
+        if (setActiveOAuth) {
+          await setActiveOAuth({ session: createdSessionId });
+        }
+        // Ensure app session user exists so AddMobile doesn't bounce to Login
+        if (clerkUser) {
+          const appUser = {
+            id: clerkUser.id,
+            email: clerkUser.primaryEmailAddress?.emailAddress || '',
+            name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.username || 'User',
+            role: 'CUSTOMER',
+            createdAt: clerkUser.createdAt?.toISOString?.() || new Date().toISOString(),
+            updatedAt: clerkUser.updatedAt?.toISOString?.() || new Date().toISOString(),
+          };
+          setUser(appUser as any);
+        }
+        // Go directly to mobile number entry, then Home
+        navigation.replace('AddMobile');
+      } else {
+        Alert.alert('Error', 'Google sign-up failed');
+      }
+    } catch (error: any) {
+      const msg = error?.errors?.[0]?.message || error?.message || 'Google sign-up error';
+      Alert.alert('Error', msg);
+      console.error('Google Sign-up Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -151,6 +196,20 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.registerButton}
             />
 
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleRegister}
+              accessibilityLabel="Sign up with Google"
+            >
+              <Image
+                source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                style={styles.googleIcon}
+                accessible
+                accessibilityIgnoresInvertColors
+              />
+              <Text variant="body" style={styles.googleText}>Sign up with Google</Text>
+            </TouchableOpacity>
+
             <View style={styles.loginSection}>
               <Text variant="body" style={styles.loginText}>
                 Already have an account?
@@ -194,7 +253,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   label: {
     marginBottom: 8,
@@ -210,7 +269,30 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: 20,
-    marginBottom: 30,
+    marginBottom: 5,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    marginTop: 20,
+    marginBottom: 5,
+  },
+  googleIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 8,
+    resizeMode: 'contain',
+  },
+  googleText: {
+    color: '#3c4043',
+    fontWeight: '600',
   },
   loginSection: {
     alignItems: 'center',

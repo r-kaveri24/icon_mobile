@@ -4,6 +4,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
 import { useApp } from '../providers/AppProvider';
+import { useUser } from '@clerk/clerk-expo';
 
 type AddMobileNavigationProp = StackNavigationProp<RootStackParamList, 'AddMobile'>;
 
@@ -13,18 +14,33 @@ interface Props {
 
 const AddMobileScreen: React.FC<Props> = ({ navigation }) => {
   const { user, setUser } = useApp();
+  const { user: clerkUser, isSignedIn } = useUser();
   const [mobile, setMobile] = useState('');
 
   useEffect(() => {
-    // If no user session, go back to Login
-    if (!user) {
+    // If app user is missing but Clerk session exists, hydrate app user from Clerk
+    if (!user && isSignedIn && clerkUser) {
+      const appUser = {
+        id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress || '',
+        name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.username || 'User',
+        role: 'CUSTOMER',
+        createdAt: clerkUser.createdAt?.toISOString?.() || new Date().toISOString(),
+        updatedAt: clerkUser.updatedAt?.toISOString?.() || new Date().toISOString(),
+      };
+      setUser(appUser as any);
+    }
+
+    // If after hydration user still missing, require login
+    if (!user && !isSignedIn) {
       navigation.replace('Login');
       return;
     }
+
     // Pre-fill if any existing value
     const existing = (user as any)?.mobile || '';
     setMobile(existing);
-  }, [user, navigation]);
+  }, [user, isSignedIn, clerkUser, navigation, setUser]);
 
   const validateMobile = (value: string) => {
     // Basic validation: allow +country code and 8-15 digits
