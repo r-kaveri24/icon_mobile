@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, Modal } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, RegisterForm } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
 import { useApp } from '../providers/AppProvider';
-import { useSignUp, useOAuth, useAuth, useUser } from '@clerk/clerk-expo';
+import { useSignUp, useOAuth, useAuth, useUser, useClerk } from '@clerk/clerk-expo';
 // Using official Google "G" logo via remote asset URL per brand guidelines
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
@@ -21,9 +21,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     password: '',
     confirmPassword: '',
   });
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verifyVisible, setVerifyVisible] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const { signUp, isLoaded: signUpLoaded } = useSignUp();
   const { signOut } = useAuth();
   const googleOAuth = useOAuth({ strategy: 'oauth_google' });
+  const { setActive } = useClerk();
 
   const handleInputChange = (field: keyof RegisterForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -53,19 +57,63 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       const nameParts = form.name.trim().split(' ').filter(Boolean);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ');
-      await signUp.create({ emailAddress: form.email, password: form.password, firstName, lastName });
+      const createResult: any = await signUp.create({ emailAddress: form.email, password: form.password, firstName, lastName });
 
-      // If your Clerk instance requires email verification, you would normally
-      // call signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-      // and then attempt verification with the received code.
-      // For now, navigate to a success screen and let user login afterward.
-      navigation.navigate('RegisterSuccess');
+      // If Clerk allows immediate completion, activate session and continue
+      if (createResult?.status === 'complete' && createResult?.createdSessionId) {
+        if (setActive) {
+          await setActive({ session: createResult.createdSessionId });
+        }
+        setLoading(false);
+        navigation.replace('AddMobile');
+        return;
+      }
+
+      // Otherwise prepare email verification and show code input
+      try {
+        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+        Alert.alert('Verify Email', 'We sent a verification code to your email. Enter it below to complete registration.');
+        setVerifyVisible(true);
+      } catch (prepErr: any) {
+        const prepMsg = prepErr?.errors?.[0]?.message || prepErr?.message || 'Failed to start email verification';
+        Alert.alert('Verification Setup Error', prepMsg);
+      }
     } catch (error: any) {
       const msg = error?.errors?.[0]?.message || error?.message || 'Registration failed';
       Alert.alert('Error', msg);
       console.error('Register Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!signUpLoaded || !signUp) {
+      Alert.alert('Error', 'SignUp not loaded');
+      return;
+    }
+    if (!verificationCode.trim()) {
+      Alert.alert('Error', 'Please enter the email verification code');
+      return;
+    }
+    try {
+      setVerifying(true);
+      const result: any = await signUp.attemptEmailAddressVerification({ code: verificationCode.trim() });
+      if (result?.status === 'complete' && result?.createdSessionId) {
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+        }
+        setVerifyVisible(false);
+        navigation.replace('AddMobile');
+      } else {
+        Alert.alert('Verification Error', 'Could not complete registration. Please check the code and try again.');
+      }
+    } catch (error: any) {
+      const msg = error?.errors?.[0]?.message || error?.message || 'Verification failed';
+      Alert.alert('Error', msg);
+      console.error('Email Verification Error:', error);
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -224,6 +272,49 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {/* Verification Modal */}
+      <Modal
+        visible={verifyVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setVerifyVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text variant="h3" style={styles.modalTitle}>Email Verification</Text>
+            <Text variant="body" style={styles.modalSubtitle}>
+              Enter the code sent to {form.email}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={verificationCode}
+              onChangeText={setVerificationCode}
+              placeholder="Verification code"
+              keyboardType="number-pad"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+            />
+            <View style={styles.modalActions}>
+              <Button
+                title={verifying ? 'Verifying…' : 'Verify'}
+                onPress={handleVerifyEmail}
+                variant="primary"
+                size="large"
+                style={styles.modalActionButton}
+                disabled={verifying}
+              />
+              <Button
+                title="Cancel"
+                onPress={() => setVerifyVisible(false)}
+                variant="ghost"
+                size="medium"
+                style={styles.modalActionButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 };
@@ -270,6 +361,42 @@ const styles = StyleSheet.create({
   registerButton: {
     marginTop: 20,
     marginBottom: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 520,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalTitle: {
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  modalActionButton: {
+    flex: 1,
+    marginHorizontal: 6,
   },
   googleButton: {
     flexDirection: 'row',
