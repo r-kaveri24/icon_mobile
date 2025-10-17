@@ -14,15 +14,28 @@ web-build/
 expo-env.d.ts
 
 # Native builds
-ios/
-android/
+# Keep platform source directories tracked; ignore build artifacts and local config
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 .kotlin/
+
+# Android nested module build outputs and local files
+**/.gradle/
+**/android/**/local.properties
+**/android/**/.cxx/
+**/android/**/app/.cxx/
+**/android/**/build/
+**/android/**/app/build/
+**/android/**/app/release/*.apk
+**/android/**/app/release/*.ap_
+**/android/**/buildlog.txt
+*.apk
+*.ap_
 
 # Metro
 .metro-health-check*
@@ -122,8 +135,9 @@ Thumbs.db
 # Build outputs
 build/
 dist/
+**/build/
+**/dist/
 
 # EAS
-.easignore
-docs/
-**/README.md
+# Keep EAS configuration tracked
+# .easignore
