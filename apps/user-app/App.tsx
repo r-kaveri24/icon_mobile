@@ -4,9 +4,13 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
+import { enableScreens } from 'react-native-screens';
 import Constants from 'expo-constants';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Disable react-native-screens at app startup
+enableScreens(false);
 
 const tokenCache = {
   async getToken(key: string) {

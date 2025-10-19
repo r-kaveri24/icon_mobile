@@ -14,28 +14,63 @@ interface Props {
   route: AgentStatusRouteProp;
 }
 
-const timelineEntries = [
-  { key: 'raised', title: 'Request Raised', desc: 'You submitted a service request', time: '10:12 AM', status: 'done' as const },
-  { key: 'searching', title: 'Searching For Agent', desc: 'Matching an available technician', time: '10:13 AM', status: 'done' as const },
-  { key: 'accepted', title: 'Agent Accepted', desc: 'Rahul accepted your request', time: '10:16 AM', status: 'done' as const },
-  { key: 'eta', title: 'ETA Confirmed', desc: 'Estimated arrival in 25 minutes', time: '10:18 AM', status: 'done' as const },
-  { key: 'departed', title: 'Agent Departed', desc: 'Technician is on the way', time: '10:22 AM', status: 'current' as const },
-  { key: 'arrived', title: 'Agent Arrived', desc: 'Reaching your location', time: '—', status: 'pending' as const },
-  { key: 'diagnosis', title: 'Diagnosis Started', desc: 'Assessing device issues', time: '—', status: 'pending' as const },
-  { key: 'part', title: 'Part Required', desc: 'Spare part identified', time: '—', status: 'pending' as const },
-  { key: 'ordered', title: 'Part Ordered', desc: 'Ordering the required part', time: '—', status: 'pending' as const },
-  { key: 'repair', title: 'Repair In Progress', desc: 'Fixing the device', time: '—', status: 'pending' as const },
-  { key: 'testing', title: 'Testing & QA', desc: 'Verifying the fix', time: '—', status: 'pending' as const },
-  { key: 'complete', title: 'Completed', desc: 'Service marked done', time: '—', status: 'pending' as const },
-];
+// Build timeline based on selected service type
+const buildTimeline = (serviceType?: 'IN_HOUSE' | 'IN_SHOP' | 'PC_BUILD') => {
+  switch (serviceType) {
+    case 'IN_SHOP':
+      return [
+        { key: 'raised', title: 'Request Raised', desc: 'You submitted a service request', time: '10:12 AM', status: 'done' as const },
+        { key: 'searching', title: 'Searching For Agent', desc: 'Matching an available technician', time: '10:13 AM', status: 'done' as const },
+        { key: 'request_sent', title: 'Request Sent', desc: 'Sent to selected agent', time: '10:14 AM', status: 'done' as const },
+        { key: 'waiting_approval', title: 'Waiting for Agent Approval', desc: 'Agent reviewing your request', time: '10:15 AM', status: 'done' as const },
+        { key: 'accepted', title: 'Agent Accepted', desc: 'Rahul accepted your request', time: '10:16 AM', status: 'done' as const },
+        { key: 'diagnosis_started', title: 'Diagnosis Started', desc: 'Assessing device issues', time: '—', status: 'current' as const },
+        { key: 'diagnosis_completed', title: 'Diagnosis Completed', desc: 'Issue identified', time: '—', status: 'pending' as const },
+        { key: 'repair_in_progress', title: 'Repair In Progress', desc: 'Fixing the device', time: '—', status: 'pending' as const },
+        { key: 'testing', title: 'Testing & QA', desc: 'Verifying the fix', time: '—', status: 'pending' as const },
+        { key: 'complete', title: 'Completed', desc: 'Service marked done', time: '—', status: 'pending' as const },
+      ];
+    case 'PC_BUILD':
+      return [
+        { key: 'raised', title: 'Request Raised', desc: 'You submitted a PC build request', time: '10:12 AM', status: 'done' as const },
+        { key: 'accepted', title: 'Agent Accepted', desc: 'Rahul accepted your request', time: '10:16 AM', status: 'done' as const },
+        { key: 'build_in_progress', title: 'Build In Progress', desc: 'Assembling your PC', time: '—', status: 'current' as const },
+        { key: 'build_done', title: 'Build Done', desc: 'Hardware build completed', time: '—', status: 'pending' as const },
+        { key: 'software_installation_in_progress', title: 'Software Installation In Progress', desc: 'Installing OS and drivers', time: '—', status: 'pending' as const },
+        { key: 'installation_done', title: 'Installation Done', desc: 'Software setup completed', time: '—', status: 'pending' as const },
+        { key: 'testing_qa', title: 'Testing & QA', desc: 'Stress tests and validation', time: '—', status: 'pending' as const },
+        { key: 'testing_done', title: 'Testing Done', desc: 'Quality checks completed', time: '—', status: 'pending' as const },
+        { key: 'complete', title: 'Completed', desc: 'Build marked done', time: '—', status: 'pending' as const },
+      ];
+    case 'IN_HOUSE':
+    default:
+      return [
+        { key: 'raised', title: 'Request Raised', desc: 'You submitted a service request', time: '10:12 AM', status: 'done' as const },
+        { key: 'searching', title: 'Searching For Agent', desc: 'Matching an available technician', time: '10:13 AM', status: 'done' as const },
+        { key: 'request_sent', title: 'Request Sent', desc: 'Sent to selected agent', time: '10:14 AM', status: 'done' as const },
+        { key: 'waiting_approval', title: 'Waiting for Agent Approval', desc: 'Agent reviewing your request', time: '10:15 AM', status: 'done' as const },
+        { key: 'accepted', title: 'Agent Accepted', desc: 'Rahul accepted your request', time: '10:16 AM', status: 'done' as const },
+        { key: 'eta', title: 'ETA Confirmed', desc: 'Estimated arrival in 25 minutes', time: '10:18 AM', status: 'done' as const },
+        { key: 'diagnosis_pending', title: 'Diagnosis Pending', desc: 'Awaiting technician to start diagnosis', time: '—', status: 'current' as const },
+        { key: 'diagnosis_started', title: 'Diagnosis Started', desc: 'Assessing device issues', time: '—', status: 'pending' as const },
+        { key: 'diagnosis_completed', title: 'Diagnosis Completed', desc: 'Issue identified', time: '—', status: 'pending' as const },
+        { key: 'repair_in_progress', title: 'Repair In Progress', desc: 'Fixing the device', time: '—', status: 'pending' as const },
+        { key: 'testing', title: 'Testing & QA', desc: 'Verifying the fix', time: '—', status: 'pending' as const },
+        { key: 'complete', title: 'Completed', desc: 'Service marked done', time: '—', status: 'pending' as const },
+      ];
+  }
+};
 
 export default function AgentStatusScreen({ navigation, route }: Props) {
+  // Compute timeline from route params
+  const serviceType = route?.params?.serviceType;
+  const timelineEntries = React.useMemo(() => buildTimeline(serviceType), [serviceType]);
   // Placeholder progress; in future, fetch by requestId from route.params
   const progressIndex = timelineEntries.findIndex(e => e.status === 'current');
   const [showAgentModal, setShowAgentModal] = React.useState(false);
-  // Countdown: start from 3 hours after agent accepts
+  // Countdown: start from 3 hours after agent accepts (applies when accepted step reached)
   const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-  const [acceptedAt] = React.useState<number>(() => Date.now());
+  const [etaConfirmedAt] = React.useState<number>(() => Date.now());
   const [timeLeftMs, setTimeLeftMs] = React.useState<number>(THREE_HOURS_MS);
   const formatTime = React.useCallback((ms: number) => {
     if (ms <= 0) return '00:00:00';
@@ -48,10 +83,10 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
   }, []);
 
   React.useEffect(() => {
-    // Only run countdown if accepted step has been reached/done
-    const acceptedReached = timelineEntries.some(e => e.key === 'accepted' && (e.status === 'done' || e.status === 'current'));
-    if (!acceptedReached) return;
-    const endAt = acceptedAt + THREE_HOURS_MS;
+    // Only run countdown if ETA step has been reached/done
+    const etaReached = timelineEntries.some(e => e.key === 'eta' && (e.status === 'done' || e.status === 'current'));
+    if (!etaReached) return;
+    const endAt = etaConfirmedAt + THREE_HOURS_MS;
     const tick = () => {
       const now = Date.now();
       setTimeLeftMs(Math.max(0, endAt - now));
@@ -59,7 +94,8 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [acceptedAt]);
+  }, [etaConfirmedAt, timelineEntries]);
+
   const agent = React.useMemo(() => ({
     name: 'Rahul',
     avatarUrl: 'https://i.pravatar.cc/120?u=rahul-agent',
@@ -68,11 +104,36 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
     since: '2023',
   }), []);
 
+  const requestSummary = {
+    serviceType: serviceType || 'IN_HOUSE',
+    category: route?.params?.category,
+    issueTitle: route?.params?.issueTitle,
+    issueNotes: route?.params?.issueNotes,
+    requestId: route?.params?.requestId,
+  };
+
   return (
     <Screen style={styles.container}>
       <View style={styles.headerRow}>
         <Text variant="h2" style={styles.title}>Agent Request Timeline</Text>
         <Text variant="caption" color="#666">Track your service status</Text>
+      </View>
+
+      {/* Request Summary */}
+      <View style={{ backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E7EC', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8 }}>
+        <Text variant="body" style={{ fontWeight: '700', color: '#2E2E2E' }}>Service: {requestSummary.serviceType.replace('_', ' ')}</Text>
+        {!!requestSummary.category && (
+          <Text variant="caption" color="#666">Category: {requestSummary.category}</Text>
+        )}
+        {!!requestSummary.issueTitle && (
+          <Text variant="caption" color="#666">Issue: {requestSummary.issueTitle}</Text>
+        )}
+        {!!requestSummary.issueNotes && (
+          <Text variant="caption" color="#666">Notes: {requestSummary.issueNotes}</Text>
+        )}
+        {!!requestSummary.requestId && (
+          <Text variant="caption" color="#999">Request ID: {requestSummary.requestId}</Text>
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.timelineList}>
@@ -92,7 +153,7 @@ export default function AgentStatusScreen({ navigation, route }: Props) {
                 <Text variant="body" style={styles.cardTitle}>{item.title}</Text>
                 <Text variant="caption" color="#666">{item.desc}</Text>
                 <Text variant="caption" color="#999">{item.time}</Text>
-                {item.key === 'accepted' && (item.status === 'done' || item.status === 'current') && (
+                {item.key === 'eta' && (item.status === 'done' || item.status === 'current') && (
                   <View style={styles.countdownRow}>
                     <View style={styles.countdownBadge}>
                       <Ionicons name="time-outline" size={16} color="#2C5AA0" />
