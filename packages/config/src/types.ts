@@ -110,7 +110,7 @@ export type RootStackParamList = {
   RegisterSuccess: undefined;
   AddMobile: undefined;
   AgentHub: undefined;
-  AgentStatus: { requestId?: string } | undefined;
+  AgentStatus: { requestId?: string; serviceType?: 'IN_HOUSE' | 'IN_SHOP' | 'PC_BUILD'; category?: string; issueTitle?: string; issueNotes?: string } | undefined;
   AgentRequest: undefined;
   AgentHistory: undefined;
   Services: undefined;
