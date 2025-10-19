@@ -16,9 +16,9 @@ export const AgentNavigator: React.FC = () => {
       initialRouteName="Dashboard"
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#FF6B35',
+          backgroundColor: '#FAF8F2',
         },
-        headerTintColor: '#fff',
+        headerTintColor: '#2E2E2E',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
