@@ -6,7 +6,7 @@ import { Screen, Text, Button } from '@icon/ui';
 import { useApp } from '../providers/AppProvider';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -17,6 +17,8 @@ interface Props {
 const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { user, setUser, config, sessionPassword, setSessionPassword } = useApp();
   const { signOut } = useAuth();
+  const { user: clerkUser } = useUser();
+  const passwordEnabled = !!clerkUser?.passwordEnabled;
 
   const [name, setName] = useState(user?.name || '');
   const [surname, setSurname] = useState('');
@@ -133,29 +135,31 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text variant="h2" style={styles.modalTitle}>Change Password</Text>
+            <Text variant="h2" style={styles.modalTitle}>{passwordEnabled ? 'Change Password' : 'Set Password'}</Text>
 
-            <View style={styles.inputGroup}>
-              <Text variant="body" style={styles.label}>Current Password</Text>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={[styles.input, styles.inputWithIcon]}
-                  value={cpCurrent}
-                  onChangeText={setCpCurrent}
-                  placeholder="Enter current password"
-                  secureTextEntry={!showCpCurrent}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowCpCurrent(v => !v)}
-                  style={styles.inputIcon}
-                  accessibilityLabel="Toggle current password visibility"
-                >
-                  <Ionicons name={showCpCurrent ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
-                </TouchableOpacity>
+            {passwordEnabled && (
+              <View style={styles.inputGroup}>
+                <Text variant="body" style={styles.label}>Current Password</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={[styles.input, styles.inputWithIcon]}
+                    value={cpCurrent}
+                    onChangeText={setCpCurrent}
+                    placeholder="Enter current password"
+                    secureTextEntry={!showCpCurrent}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowCpCurrent(v => !v)}
+                    style={styles.inputIcon}
+                    accessibilityLabel="Toggle current password visibility"
+                  >
+                    <Ionicons name={showCpCurrent ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )}
 
             <View style={styles.inputGroup}>
               <Text variant="body" style={styles.label}>New Password</Text>
@@ -204,16 +208,12 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.modalActions}>
               <Button title="Cancel" variant="secondary" size="medium" onPress={() => setChangePwVisible(false)} />
               <Button
-                title="Change"
+                title={passwordEnabled ? 'Change' : 'Set'}
                 variant="primary"
                 size="medium"
-                onPress={() => {
-                  if (!cpCurrent.trim()) {
+                onPress={async () => {
+                  if (passwordEnabled && !cpCurrent.trim()) {
                     Alert.alert('Validation', 'Please enter your current password');
-                    return;
-                  }
-                  if (sessionPassword && cpCurrent !== sessionPassword) {
-                    Alert.alert('Validation', 'Current password is incorrect');
                     return;
                   }
                   if (cpNew.length < 6) {
@@ -225,17 +225,27 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                     return;
                   }
 
-                  // Update session-only password until API integration
-                  setSessionPassword(cpNew);
-                  setPassword(cpNew);
-                  setChangePwVisible(false);
-                  setCpCurrent('');
-                  setCpNew('');
-                  setCpConfirm('');
-                  setShowCpCurrent(false);
-                  setShowCpNew(false);
-                  setShowCpConfirm(false);
-                  Alert.alert('Success', 'Password changed successfully');
+                  try {
+                    if (passwordEnabled) {
+                      await clerkUser?.updatePassword({ currentPassword: cpCurrent, newPassword: cpNew });
+                    } else {
+                      await clerkUser?.updatePassword({ newPassword: cpNew });
+                    }
+                    // Update local session password display to reflect the change
+                    setSessionPassword(cpNew);
+                    setPassword(cpNew);
+                    setChangePwVisible(false);
+                    setCpCurrent('');
+                    setCpNew('');
+                    setCpConfirm('');
+                    setShowCpCurrent(false);
+                    setShowCpNew(false);
+                    setShowCpConfirm(false);
+                    Alert.alert('Success', passwordEnabled ? 'Password changed successfully' : 'Password set successfully');
+                  } catch (e: any) {
+                    const msg = e?.errors?.[0]?.message || e?.message || 'Failed to update password';
+                    Alert.alert('Error', msg);
+                  }
                 }}
               />
             </View>
@@ -309,18 +319,20 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                 />
                 <View style={[styles.inputReadonly, styles.inputRow]}>
                   <Text variant="body" style={styles.passwordText}>
-                    {showPassword ? (password || '********') : '********'}
+                    {passwordEnabled ? (showPassword ? (password || '') : '********') : ''}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(v => !v)}
-                    style={styles.inputIcon}
-                    accessibilityLabel="Toggle password visibility"
-                  >
-                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
-                  </TouchableOpacity>
+                  {passwordEnabled && (
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(v => !v)}
+                      style={styles.inputIcon}
+                      accessibilityLabel="Toggle password visibility"
+                    >
+                      <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <TouchableOpacity onPress={() => setChangePwVisible(true)} style={styles.changePasswordLink} accessibilityLabel="Change Password">
-                  <Text variant="caption" style={styles.changePasswordText}>Change Password</Text>
+                <TouchableOpacity onPress={() => setChangePwVisible(true)} style={styles.changePasswordLink} accessibilityLabel={passwordEnabled ? 'Change Password' : 'Set Password'}>
+                  <Text variant="caption" style={[styles.changePasswordText, !passwordEnabled ? { color: '#007AFF' } : undefined]}>{passwordEnabled ? 'Change Password' : 'Set Password'}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -331,18 +343,23 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.inputReadonly}><Text variant="body" color={mobile ? '#000' : '#999'}>{mobile || 'Add Mobile No'}</Text></View>
                 <View style={[styles.inputReadonly, styles.inputRow]}>
                   <Text variant="body" style={styles.passwordText}>
-                    {showPassword ? (password || '********') : '********'}
+                    {passwordEnabled ? (showPassword ? (password || '') : '********') : ''}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(v => !v)}
-                    style={styles.inputIcon}
-                    accessibilityLabel="Toggle password visibility"
-                  >
-                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
-                  </TouchableOpacity>
+                  {passwordEnabled && (
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(v => !v)}
+                      style={styles.inputIcon}
+                      accessibilityLabel="Toggle password visibility"
+                    >
+                      <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#7c7c7c" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <TouchableOpacity onPress={() => setChangePwVisible(true)} style={styles.changePasswordLink} accessibilityLabel="Change Password">
-                  <Text variant="caption" style={styles.changePasswordText}>Change Password</Text>
+                <TouchableOpacity onPress={() => setChangePwVisible(true)}
+                  style={styles.changePasswordLink}
+                  accessibilityLabel={passwordEnabled ? 'Change Password' : 'Set Password'}
+                >
+                  <Text variant="caption" style={[styles.changePasswordText, !passwordEnabled ? { color: '#007AFF' } : undefined]}>{passwordEnabled ? 'Change Password' : 'Set Password'}</Text>
                 </TouchableOpacity>
               </View>
             )}
