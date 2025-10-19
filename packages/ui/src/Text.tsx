@@ -3,6 +3,7 @@ import {
   Text as RNText,
   TextStyle,
   StyleSheet,
+  StyleProp,
 } from 'react-native';
 
 type TextVariant = 
@@ -17,7 +18,7 @@ interface TextProps {
   children: React.ReactNode;
   variant?: TextVariant;
   color?: string;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
   numberOfLines?: number;
   onPress?: () => void;
 }
