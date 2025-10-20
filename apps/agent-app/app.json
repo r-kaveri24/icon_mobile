@@ -25,6 +25,9 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+    "extra": {
+      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_dG9nZXRoZXItcGVhY29jay0yNi5jbGVyay5hY2NvdW50cy5kZXYk"
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     }

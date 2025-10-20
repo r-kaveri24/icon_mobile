@@ -1,60 +1,85 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Screen, Text, Button } from '@icon/ui';
 import { agentService } from '@icon/api';
 import { useAgent } from '../providers/AgentProvider';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { AgentStackParamList } from '@icon/config';
+import AdminHeader from '../components/AdminHeader';
+import StatCard from '../components/StatCard';
+import ProgressCard from '../components/ProgressCard';
+import BottomNavBar from '../components/BottomNavBar';
 
 const DashboardScreen: React.FC = () => {
-  const { agent, setAgent, loading, setLoading, config } = useAgent();
+  const { agent, setAgent, isLoading, setLoading, config } = useAgent();
+  const navigation = useNavigation<StackNavigationProp<AgentStackParamList>>();
+  const [dashboard, setDashboard] = useState<any | null>(null);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await agentService.getAgentDashboard();
-        setAgent(data);
+        const [agentResp, dashResp] = await Promise.all([
+          agentService.getCurrentAgent(),
+          agentService.getAgentDashboard(),
+        ]);
+        const agentData = (agentResp as any)?.data || agentResp;
+        const dashData = (dashResp as any)?.data || dashResp;
+        setAgent(agentData);
+        setDashboard(dashData);
       } catch (error) {
-        console.error('Failed to fetch agent dashboard:', error);
+        console.error('Failed to fetch dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDashboard();
+    fetchData();
   }, [setAgent, setLoading]);
+
+  const completed = Number((dashboard as any)?.completedOrders ?? (agent as any)?.completedOrders ?? 0);
+  const pending = Number((dashboard as any)?.pendingOrders ?? 0);
+  const total = Math.max(1, completed + pending);
+  const progressPct = Math.round((completed / total) * 100);
+  const displayName = (agent as any)?.user?.name ?? (agent as any)?.name ?? 'Agent';
+  const ratingVal = (agent as any)?.rating;
+  const ratingDisplay = typeof ratingVal === 'number' ? Number(ratingVal).toFixed(1) : (ratingVal ?? '—');
 
   return (
     <Screen backgroundColor="#FAF8F2" style={styles.container}>
-      <View style={styles.card}>
-        <Text variant="h2" style={styles.title}>Agent Dashboard</Text>
-        <Text variant="body" style={styles.subtitle}>
-          {config.mockMode ? 'Mock Mode' : 'Live'} environment
-        </Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <AdminHeader welcomeName={displayName} />
 
-        {loading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator size="large" color="#2E2E2E" />
-            <Text variant="caption" style={styles.loaderText}>Loading dashboard...</Text>
-          </View>
-        ) : (
-          <View>
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text variant="h3">Active Sessions</Text>
-                <Text variant="h2">{agent?.activeSessions ?? 0}</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text variant="h3">Pending Requests</Text>
-                <Text variant="h2">{agent?.pendingRequests ?? 0}</Text>
-              </View>
+          {isLoading ? (
+            <View style={styles.loader}>
+              <ActivityIndicator size="large" color="#2E2E2E" />
+              <Text variant="caption" style={styles.loaderText}>Loading dashboard...</Text>
             </View>
+          ) : (
+            <View >
+              {/* KPI column */}
+              <View style={styles.kpiStack}>
+                <StatCard icon="checkbox-outline" value={completed} label="Completed Orders" variant="green" />
+                <StatCard icon="time-outline" value={pending} label="Pending Orders" variant="orange" />
+                <StatCard icon="star-outline" value={ratingDisplay} label="Rating" variant="purple" />
+              </View>
+              <View style={styles.kpiRow}>
+                  <Button title="Accept Request" variant="primary" size="small" onPress={() => navigation.navigate('Requests')} />
+            </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
-            <View style={styles.actionsRow}>
-              <Button title="Health Check" variant="primary" size="large" />
-              <Button title="Settings" variant="outline" size="large" />
-            </View>
-          </View>
-        )}
+      {/* Bottom nav */}
+      <View style={styles.bottomNav}>
+        <BottomNavBar
+          onHome={() => navigation.navigate('Dashboard')}
+          onSocial={() => navigation.navigate('Requests')}
+          onProfile={() => navigation.navigate('Profile')}
+        />
       </View>
     </Screen>
   );
@@ -63,23 +88,19 @@ const DashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 56,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
+    paddingBottom: 20,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-  },
-  title: {
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: '#666',
-    marginBottom: 12,
   },
   loader: {
     alignItems: 'center',
@@ -89,25 +110,40 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 8,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+  kpiRow: {
+ 
+   alignItems: 'center',
   },
-  statBox: {
+  kpiCol: {
     flex: 1,
+  },
+  pointsCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#EEF3FB',
+    marginBottom: 12,
+  },
+  pointsTitle: {
+    marginBottom: 8,
+    color: '#2E2E2E',
   },
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
     gap: 8,
+  },
+  bottomNav: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  kpiStack: {
+    gap: 8,
+    marginBottom: 12,
   },
 });
 
