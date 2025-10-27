@@ -12,11 +12,16 @@ import ProgressCard from '../components/ProgressCard';
 import BottomNavBar from '../components/BottomNavBar';
 
 const DashboardScreen: React.FC = () => {
-  const { agent, setAgent, isLoading, setLoading, config } = useAgent();
+  const { agent, setAgent, isLoading, setLoading, config, onboardingComplete } = useAgent();
   const navigation = useNavigation<StackNavigationProp<AgentStackParamList>>();
   const [dashboard, setDashboard] = useState<any | null>(null);
 
   useEffect(() => {
+    if (!onboardingComplete) {
+      navigation.replace('OnboardingInfo');
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -36,7 +41,7 @@ const DashboardScreen: React.FC = () => {
     };
 
     fetchData();
-  }, [setAgent, setLoading]);
+  }, [setAgent, setLoading, onboardingComplete]);
 
   const completed = Number((dashboard as any)?.completedOrders ?? (agent as any)?.completedOrders ?? 0);
   const pending = Number((dashboard as any)?.pendingOrders ?? 0);

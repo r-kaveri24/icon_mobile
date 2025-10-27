@@ -132,6 +132,7 @@ export interface NotificationItem {
 }
 
 export type AgentStackParamList = {
+  Login: undefined;
   Dashboard: undefined;
   Settings: undefined;
   Profile: undefined;
@@ -140,6 +141,9 @@ export type AgentStackParamList = {
   ServiceFlow: { requestId: string; serviceType: ServiceType; etaMinutes?: number };
   Timeline: { requestId: string; events?: any[] };
   Notifications: undefined;
+  OnboardingInfo: undefined;
+  OnboardingSkills: { fullName: string; experienceYears: number; age: number; mobile: string };
+  OnboardingPhoto: { fullName: string; experienceYears: number; age: number; mobile: string; skills: string[] };
 };
 
 // Form types
