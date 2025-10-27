@@ -25,15 +25,9 @@ const AdminHeader: React.FC<Props> = ({
       {/* Top brand / actions row */}
       <View style={styles.topRow}>
         <View style={styles.brandRow}>
-          <TouchableOpacity onPress={onMenuPress} accessibilityLabel="Open menu">
-            <Ionicons name="menu-outline" size={22} color="#3E86F5" />
-          </TouchableOpacity>
           <Text variant="h3" style={styles.brandText}>ICON</Text>
         </View>
         <View style={styles.actionsRow}>
-          <TouchableOpacity onPress={onSearchPress} style={styles.actionBtn} accessibilityLabel="Search">
-            <Ionicons name="search-outline" size={18} color="#3E86F5" />
-          </TouchableOpacity>
           <TouchableOpacity onPress={onNotifPress} style={styles.actionBtn} accessibilityLabel="Notifications">
             <Ionicons name="notifications-outline" size={18} color="#3E86F5" />
           </TouchableOpacity>

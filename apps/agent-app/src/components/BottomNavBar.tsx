@@ -5,19 +5,17 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   onHome?: () => void;
-  onWallet?: () => void;
   onSocial?: () => void;
-  onFiles?: () => void;
+  onNotifications?: () => void;
   onProfile?: () => void;
 }
 
-const BottomNavBar: React.FC<Props> = ({ onHome, onWallet, onSocial, onFiles, onProfile }) => {
+const BottomNavBar: React.FC<Props> = ({ onHome, onSocial, onNotifications, onProfile }) => {
   return (
     <View style={styles.container}>
       <NavItem icon="home-outline" label="Home" onPress={onHome} />
-      <NavItem icon="wallet-outline" label="Wallet" onPress={onWallet} />
       <NavItem icon="reader-outline" label="Requests" onPress={onSocial} />
-      <NavItem icon="folder-outline" label="Files" onPress={onFiles} />
+      <NavItem icon="notifications-outline" label="Notifications" onPress={onNotifications} />
       <NavItem icon="person-outline" label="Profile" onPress={onProfile} />
     </View>
   );

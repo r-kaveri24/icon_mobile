@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { AgentStackParamList, ServiceType } from '@icon/config';
 import { Screen, Text, Button } from '@icon/ui';
 import { useAgent } from '../providers/AgentProvider';
-import TopBar from '../components/TopBar';
+import { CARD_COLORS } from '../components/theme'
+import BottomNavBar from '../components/BottomNavBar';
+import { Ionicons } from '@expo/vector-icons';
 
 export type ServiceFlowNav = StackNavigationProp<AgentStackParamList, 'ServiceFlow'>;
 export type ServiceFlowRoute = RouteProp<AgentStackParamList, 'ServiceFlow'>;
@@ -115,6 +117,9 @@ const ServiceFlowScreen: React.FC<Props> = ({ navigation, route }) => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    // Hide ETA countdown and button after starting the visit
+    setEtaTargetTs(null);
+    setTimeLeftSec(0);
     const idx = indexOfStage('START_VISIT');
     if (idx >= 0) {
       setCurrentIndex(idx);
@@ -137,27 +142,26 @@ const ServiceFlowScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <Screen backgroundColor="#FAF8F2" style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TopBar
-            onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'))}
-            showProfile
-            onProfilePress={() => navigation.navigate('Profile')}
-            textColor="#fff"
-          />
-          <Text variant="h2" style={{ color: '#333' }}>Service Flow</Text>
-          <Text variant="caption" style={styles.subtitle}>Request {requestId}</Text>
-          <Text variant="caption" style={styles.subtitle}>Type: {serviceType.replace('_', ' ')}</Text>
-          <Text variant="caption" style={styles.subtitle}>{config.mockMode ? 'Mock Mode' : 'Live'}</Text>
+          <View style={styles.titleRow}>
+            <TouchableOpacity onPress={() => navigation.navigate('Requests')} style={styles.backButton} accessibilityLabel="Back to Requests">
+              <Ionicons name="arrow-back-outline" size={22} color="#000" />
+            </TouchableOpacity>
+            <Text variant="h2" style={{ color: '#333' }}>Service Flow</Text>
+          </View>
+          <Text variant="caption" style={[styles.subtitle, { color: CARD_COLORS.caption }]}>Request {requestId}</Text>
+          <Text variant="caption" style={[styles.subtitle, { color: CARD_COLORS.caption }]}>Type: {serviceType.replace('_', ' ')}</Text>
+          <Text variant="caption" style={[styles.subtitle, { color: CARD_COLORS.caption }]}>{config.mockMode ? 'Mock Mode' : 'Live'}</Text>
         </View>
 
         <View style={styles.flowCard}>
-          {serviceType === 'IN_HOUSE' && etaTargetTs && (
+          {serviceType === 'IN_HOUSE' && etaTargetTs && currentIndex < indexOfStage('START_VISIT') && (
             <View style={styles.etaCard}>
               <Text variant="h3">Arriving in</Text>
               <Text variant="h2" style={styles.etaCountdown}>{formatTime(timeLeftSec)}</Text>
               <View style={styles.etaActions}>
-                <Button title="Start Visit" variant="primary" size="large" onPress={startVisit} />
+                <Button title="Start Visit" variant="primary" size="small" onPress={startVisit} />
               </View>
             </View>
           )}
@@ -173,11 +177,21 @@ const ServiceFlowScreen: React.FC<Props> = ({ navigation, route }) => {
           ))}
 
           <View style={styles.actions}>
-            <Button title="Advance" variant="primary" size="large" onPress={advance} />
-            <Button title="View Timeline" variant="outline" size="large" onPress={openTimeline} />
+            <Button title="Advance" variant="primary" size="small" onPress={advance} style={{ flex: 1, marginRight: 8 }} />
+            <Button title="View Timeline" variant="secondary" size="small" onPress={openTimeline} style={{ flex: 1 }} />
           </View>
         </View>
+
       </ScrollView>
+
+      <View style={styles.bottomNav}>
+        <BottomNavBar
+          onHome={() => navigation.navigate('Dashboard')}
+          onSocial={() => navigation.navigate('Requests')}
+         onNotifications={() => navigation.navigate('Notifications')}
+          onProfile={() => navigation.navigate('Profile')}
+        />
+      </View>
     </Screen>
   );
 };
@@ -186,17 +200,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 24, paddingHorizontal: 16 },
   header: { padding: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  backButton: { padding: 4 },
   subtitle: { color: '#555' },
-  flowCard: { backgroundColor: '#fff', margin: 16, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#eee' },
-  etaCard: { backgroundColor: '#F9FBFF', borderColor: '#E4F0FF', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  flowCard: { backgroundColor: '#fff', margin: 16, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: CARD_COLORS.border, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, overflow: 'hidden' },
+  etaCard: { backgroundColor: '#F9FBFF', borderColor: CARD_COLORS.border, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
   etaCountdown: { color: '#2E86FF' },
-  etaActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  etaActions: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   stageRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stageMarker: { width: 16, height: 16, borderRadius: 8, marginRight: 12 },
   stageActive: { backgroundColor: '#34C759' },
   stageInactive: { backgroundColor: '#E5E5E5' },
   stageContent: { flex: 1 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  actions: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  bottomNav: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: 1, borderColor: '#eee', backgroundColor: '#fff' },
 });
 
 export default ServiceFlowScreen;

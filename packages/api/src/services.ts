@@ -7,6 +7,7 @@ import {
   User,
   LoginForm,
   RegisterForm,
+  NotificationItem,
 } from '@icon/config';
 import {
   mockHealthResponse,
@@ -320,6 +321,25 @@ export const agentService = {
     }
     
     return apiClient.get<ApiResponse<any>>(buildApiUrl('agents') + '/dashboard');
+  },
+
+  async getNotifications(): Promise<ApiResponse<NotificationItem[]>> {
+    if (config.mockMode) {
+      await mockDelay();
+      const now = new Date();
+      const iso = (d: Date) => d.toISOString();
+      return {
+        success: true,
+        data: [
+          { id: 'n1', title: 'Alex Smith, John McMillan and 36 others are also ordered from same website', type: 'event', icon: 'people-outline', createdAt: iso(new Date(now.getTime() - 60 * 60 * 1000)), read: false },
+          { id: 'n2', title: 'Jack Mario commented: "This one is most usable design with great user experience. w..."', type: 'comment', icon: 'chatbubble-outline', createdAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)), read: false },
+          { id: 'n3', title: 'Your subscription going to expire soon. Please upgrade to get service interrupt free.', type: 'warning', icon: 'alert-circle-outline', createdAt: iso(new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)), read: false },
+          { id: 'n4', title: 'Roberto Carlos has requested to send $120.00 money.', type: 'payment', icon: 'card-outline', createdAt: iso(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)), read: true },
+          { id: 'n5', title: 'Adminuiux: #1 HTML Templates — are attending', type: 'event', icon: 'calendar-outline', createdAt: iso(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)), read: true },
+        ],
+      };
+    }
+    return apiClient.get<ApiResponse<NotificationItem[]>>(buildApiUrl('agents') + '/notifications');
   },
 };
 

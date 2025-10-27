@@ -47,10 +47,10 @@ const DashboardScreen: React.FC = () => {
   const ratingDisplay = typeof ratingVal === 'number' ? Number(ratingVal).toFixed(1) : (ratingVal ?? '—');
 
   return (
-    <Screen backgroundColor="#FAF8F2" style={styles.container}>
+    <Screen  style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <AdminHeader welcomeName={displayName} />
+        <View >
+          <AdminHeader welcomeName={displayName} onNotifPress={() => navigation.navigate('Notifications')}/>
 
           {isLoading ? (
             <View style={styles.loader}>
@@ -75,9 +75,7 @@ const DashboardScreen: React.FC = () => {
 
       {/* Bottom nav */}
       <View style={styles.bottomNav}>
-        <BottomNavBar
-          onHome={() => navigation.navigate('Dashboard')}
-          onSocial={() => navigation.navigate('Requests')}
+        <BottomNavBar onHome={() => navigation.navigate('Dashboard')} onSocial={() => navigation.navigate('Requests')} onNotifications={() => navigation.navigate('Notifications')}
           onProfile={() => navigation.navigate('Profile')}
         />
       </View>

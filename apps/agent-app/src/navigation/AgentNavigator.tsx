@@ -9,6 +9,7 @@ import ServiceFlowScreen from '../screens/ServiceFlowScreen';
 import TimelineScreen from '../screens/TimelineScreen';
 import RequestDetailScreen from '../screens/RequestDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createStackNavigator<AgentStackParamList>();
 
@@ -57,6 +58,11 @@ export const AgentNavigator: React.FC = () => {
         name="Profile" 
         component={ProfileScreen} 
         options={{ title: 'Profile' }}
+      />
+      <Stack.Screen 
+        name="Notifications" 
+        component={NotificationsScreen} 
+        options={{ title: 'Notifications' }}
       />
     </Stack.Navigator>
   );

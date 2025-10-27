@@ -220,9 +220,7 @@ const profilePhotoUri = (agent as any)?.photoUrl || (agent as any)?.imageUrl || 
         </ScrollView>
       </KeyboardAvoidingView>
       <View style={styles.bottomNavContainer}>
-        <BottomNavBar
-          onHome={() => navigation.navigate('Dashboard')}
-          onSocial={() => navigation.navigate('Requests')}
+        <BottomNavBar onHome={() => navigation.navigate('Dashboard')} onSocial={() => navigation.navigate('Requests')} onNotifications={() => navigation.navigate('Notifications')}
           onProfile={() => navigation.navigate('Profile')}
         />
       </View>

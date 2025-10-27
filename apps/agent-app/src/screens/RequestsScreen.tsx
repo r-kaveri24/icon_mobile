@@ -151,6 +151,7 @@ const RequestsScreen: React.FC<Props> = ({ navigation }) => {
         <BottomNavBar
           onHome={() => navigation.navigate('Dashboard')}
           onSocial={() => navigation.navigate('Requests')}
+          onNotifications={() => navigation.navigate('Notifications')}
           onProfile={() => navigation.navigate('Profile')}
         />
       </View>

@@ -118,6 +118,19 @@ export type RootStackParamList = {
 
 export type ServiceType = 'IN_HOUSE' | 'IN_SHOP' | 'PC_BUILD';
 
+// Notification types
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message?: string;
+  type: 'info' | 'warning' | 'request' | 'payment' | 'comment' | 'event';
+  icon?: string; // optional Ionicons name
+  createdAt: string; // ISO timestamp
+  read?: boolean;
+  actorName?: string;
+  actorAvatarUrl?: string;
+}
+
 export type AgentStackParamList = {
   Dashboard: undefined;
   Settings: undefined;
@@ -126,6 +139,7 @@ export type AgentStackParamList = {
   RequestDetail: { requestId: string; serviceType: ServiceType; title?: string; customerName?: string; issueType?: string; issueDescription?: string; clientAddress?: string; clientPhone?: string; clientEmail?: string; nextVisitAt?: string; status?: 'NEW'|'ACCEPTED'|'IN_PROGRESS'|'COMPLETED'|'CANCELLED' };
   ServiceFlow: { requestId: string; serviceType: ServiceType; etaMinutes?: number };
   Timeline: { requestId: string; events?: any[] };
+  Notifications: undefined;
 };
 
 // Form types
