@@ -71,7 +71,7 @@ const DashboardScreen: React.FC = () => {
                 <StatCard icon="star-outline" value={ratingDisplay} label="Rating" variant="purple" />
               </View>
               <View style={styles.kpiRow}>
-                  <Button title="Accept Request" variant="primary" size="small" onPress={() => navigation.navigate('Requests')} />
+                  <Button title="Accept Request" variant="primary" size="medium" onPress={() => navigation.navigate('Requests')} />
             </View>
             </View>
           )}
