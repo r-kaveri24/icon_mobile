@@ -125,7 +125,7 @@ export const cmsService = {
       }
     }
 
-    // Real API mode: transform backend /cms response into CMSResponse shape
+    // Real API mode: call backend /cms and transform response into CMSResponse shape
     const raw = await apiClient.get<any>(buildApiUrl('cms'));
 
     const nowIso = new Date().toISOString();
@@ -133,36 +133,36 @@ export const cmsService = {
     const banners: CMSResponse['banners'] = (raw?.banners || []).map((b: any) => ({
       id: String(b.id ?? b.id),
       title: b.title ?? 'Banner',
-      description: b.subtitle ?? undefined,
+      description: b.description ?? b.subtitle ?? undefined,
       imageUrl: b.imageUrl,
-      linkUrl: b.ctaLink ?? undefined,
-      isActive: (b.status ?? 'ACTIVE') === 'ACTIVE',
-      startDate: b.validFrom ? new Date(b.validFrom).toISOString() : undefined,
-      endDate: b.validTo ? new Date(b.validTo).toISOString() : undefined,
+      linkUrl: b.linkUrl ?? b.ctaLink ?? undefined,
+      isActive: Boolean(b.isActive ?? ((b.status ?? 'ACTIVE') === 'ACTIVE')),
+      startDate: b.startDate ?? (b.validFrom ? new Date(b.validFrom).toISOString() : undefined),
+      endDate: b.endDate ?? (b.validTo ? new Date(b.validTo).toISOString() : undefined),
       createdAt: b.createdAt ?? nowIso,
       updatedAt: b.updatedAt ?? nowIso,
     }));
 
     const offers: CMSResponse['offers'] = (raw?.offers || []).map((o: any) => ({
       id: String(o.id ?? o.id),
-      title: o.title ?? `${o.productName ?? 'Offer'} — ${Number(o.discountPercent ?? 0)}% OFF`,
-      description: o.description ?? (o.productName ? `Save ${Number(o.discountPercent ?? 0)}% on ${o.productName}` : undefined),
-      discountPercentage: Number(o.discountPercent ?? 0),
-      isActive: (o.status ?? 'ACTIVE') === 'ACTIVE',
-      startDate: o.validFrom ? new Date(o.validFrom).toISOString() : undefined,
-      endDate: o.validTo ? new Date(o.validTo).toISOString() : undefined,
+      title: o.title ?? `${o.productName ?? 'Offer'} — ${Number(o.discountPercentage ?? o.discountPercent ?? 0)}% OFF`,
+      description: o.description ?? (o.productName ? `Save ${Number(o.discountPercentage ?? o.discountPercent ?? 0)}% on ${o.productName}` : undefined),
+      discountPercentage: Number(o.discountPercentage ?? o.discountPercent ?? 0),
+      isActive: Boolean(o.isActive ?? ((o.status ?? 'ACTIVE') === 'ACTIVE')),
+      startDate: o.startDate ?? (o.validFrom ? new Date(o.validFrom).toISOString() : undefined),
+      endDate: o.endDate ?? (o.validTo ? new Date(o.validTo).toISOString() : undefined),
       createdAt: o.createdAt ?? nowIso,
       updatedAt: o.updatedAt ?? nowIso,
     }));
 
     const products: CMSResponse['products'] = (raw?.laptops || []).map((p: any) => ({
       id: String(p.id ?? p.id),
-      name: p.productName ?? p.title ?? 'Laptop',
+      name: p.name ?? p.productName ?? p.title ?? 'Laptop',
       description: p.description ?? '',
-      price: Number(p.discounted ?? p.price ?? 0),
+      price: Number(p.price ?? p.discounted ?? 0),
       imageUrl: p.imageUrl,
-      category: 'laptops',
-      isActive: (p.status ?? 'ACTIVE') === 'ACTIVE',
+      category: p.category ?? 'laptops',
+      isActive: Boolean(p.isActive ?? ((p.status ?? 'ACTIVE') === 'ACTIVE')),
       createdAt: p.createdAt ?? nowIso,
       updatedAt: p.updatedAt ?? nowIso,
     }));
@@ -202,7 +202,17 @@ export const cmsService = {
       };
     }
     
-    return apiClient.get<ApiResponse<any>>(buildApiUrl('cms') + '/home');
+    return apiClient.get<ApiResponse<any>>(buildApiUrl('home'));
+  },
+
+  // Debug helper: fetch raw JSON from /home without transforming for UI
+  async getHomeRaw(): Promise<any> {
+    if (config.mockMode) {
+      // Reuse getHomeContent mock data when mockMode is enabled
+      const res = await this.getHomeContent();
+      return res?.data ?? res;
+    }
+    return apiClient.get<any>(buildApiUrl('home'));
   },
 };
 

@@ -8,6 +8,7 @@ export interface AppConfig {
 export interface ApiEndpoints {
   health: string;
   cms: string;
+  home: string;
   auth: string;
   users: string;
   agents: string;
@@ -35,6 +36,7 @@ const defaultConfig: AppConfig = {
 export const apiEndpoints: ApiEndpoints = {
   health: '/healthz',
   cms: '/cms',
+  home: '/home',
   auth: '/auth',
   users: '/users',
   agents: '/agents',
@@ -46,7 +48,7 @@ export const apiEndpoints: ApiEndpoints = {
 const configs = {
   development: {
     ...defaultConfig,
-    apiUrl: 'http://localhost:8080',
+    apiUrl: 'http://192.168.1.13:8080',
     mockMode: false,
   },
   staging: {

@@ -20,6 +20,16 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
+        // For GET requests, avoid sending Content-Type to prevent unnecessary CORS preflight
+        if (String(config.method).toLowerCase() === 'get') {
+          if (config.headers) {
+            // Axios may store headers in different shapes depending on adapter/version
+            // Normalize then remove Content-Type for GET
+            const h: any = config.headers as any;
+            delete h['Content-Type'];
+            delete h['content-type'];
+          }
+        }
         // Add auth token if available
         const token = this.getAuthToken();
         if (token) {
